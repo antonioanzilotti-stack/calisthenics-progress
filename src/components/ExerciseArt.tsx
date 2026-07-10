@@ -1,0 +1,1 @@
+export default function ExerciseArt({id,name,pose=0}:{id:string;name:string;pose?:number}){return <figure className="exercise-art"><img src={`/illustrations/${id}-${pose}.webp`} alt={`${name}: ${pose?'posizione finale':'posizione iniziale'}`} loading="lazy"/><figcaption>{pose?'Posizione finale':'Posizione iniziale'}</figcaption></figure>}

@@ -1,0 +1,3 @@
+import {createContext,useContext,useEffect,useState,type ReactNode} from 'react';import type {AppData} from '../types';import {initialData} from '../data/defaults';import {load,save} from '../storage/store';
+type Ctx={data:AppData;setData:React.Dispatch<React.SetStateAction<AppData>>;reset:(demo:boolean)=>void};const AppCtx=createContext<Ctx|null>(null);
+export function AppProvider({children}:{children:ReactNode}){const[data,setData]=useState(load);useEffect(()=>{save(data);document.documentElement.dataset.theme=data.preferences.theme},[data]);return <AppCtx.Provider value={{data,setData,reset:(demo)=>setData(initialData(demo))}}>{children}</AppCtx.Provider>};export const useApp=()=>useContext(AppCtx)!;

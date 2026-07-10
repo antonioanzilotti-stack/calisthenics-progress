@@ -1,0 +1,2 @@
+import{useState}from'react';import Nav from'./components/Nav';import Today from'./pages/Today';import Calendar from'./pages/Calendar';import Progress from'./pages/Progress';import Exercises from'./pages/Exercises';import Settings from'./pages/Settings';
+export default function App(){const[page,setPage]=useState('today');const P={today:Today,calendar:Calendar,progress:Progress,exercises:Exercises,settings:Settings}[page]||Today;return <><main><P/></main><Nav page={page} setPage={setPage}/></>}

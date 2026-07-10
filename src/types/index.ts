@@ -1,0 +1,9 @@
+export type Status='programmato'|'completato'|'saltato'|'parziale'|'recuperato'|'riposo';
+export type SetLog={done:boolean;reps:number;seconds:number};
+export type Exercise={id:string;name:string;group:string;level:string;equipment:string;steps:string[];breathing:string;mistakes:string;regression:string;progression:string;warning:string;muscles:string;sets:number;reps?:string;seconds?:string;rest:number};
+export type WorkoutExercise={exerciseId:string;sets:number;reps?:string;seconds?:string};
+export type Workout={id:string;name:string;short:string;duration:number;exercises:WorkoutExercise[]};
+export type Session={id:string;date:string;workoutId:string;status:Status;duration:number;notes:string;rpe:number;reason?:string;recoveredFrom?:string;logs:Record<string,SetLog[]>};
+export type Goal={id:string;label:string;unit:string;start:number;current:number;target:number;updated:string;history:{date:string;value:number}[]};
+export type Preferences={theme:'light'|'dark';rest:number;barEnabled:boolean;unit:'metrico'|'imperiale';demo:boolean;createdAt:string};
+export type AppData={sessions:Session[];workouts:Workout[];schedule:Record<number,string>;goals:Goal[];preferences:Preferences};
