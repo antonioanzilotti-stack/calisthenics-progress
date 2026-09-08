@@ -1,0 +1,12 @@
+.exercise-art,
+.poses .exercise-art {
+  aspect-ratio: 1;
+  background: #f7f1e8;
+}
+
+.exercise-art img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}

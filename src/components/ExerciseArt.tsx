@@ -1,3 +1,5 @@
+import {useState} from 'react';
+
 type Point = [number, number];
 
 const floorIds = new Set(['plank', 'dead-bug']);
@@ -31,6 +33,7 @@ function legPoints(id: string, pose: number): [Point, Point, Point, Point] {
 const Line = ({a,b}:{a:Point;b:Point}) => <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]}/>;
 
 export default function ExerciseArt({id, name, pose = 0}: {id: string; name: string; pose?: number}) {
+  const [imageFailed, setImageFailed] = useState(false);
   const floor = floorIds.has(id);
   const standing = standingIds.has(id);
   const seated = !floor && !standing;
@@ -38,8 +41,11 @@ export default function ExerciseArt({id, name, pose = 0}: {id: string; name: str
   const legs = legPoints(id, pose);
   const cardio = ['rower','bike','elliptical','stair-climber','walk','incline-walk','boxing','jump-rope'].includes(id);
 
+  const label = `${name}: ${pose ? 'posizione finale' : 'posizione iniziale'}`;
+
   return <figure className="exercise-art">
-    <svg viewBox="0 0 240 180" role="img" aria-label={`${name}: ${pose ? 'posizione finale' : 'posizione iniziale'}`}>
+    {!imageFailed && <img src={`/illustrations-v3/${id}-${pose}.webp`} alt={label} loading="lazy" decoding="async" onError={() => setImageFailed(true)}/>}
+    {imageFailed && <svg viewBox="0 0 240 180" role="img" aria-label={label}>
       <defs><marker id={`arrow-${id}-${pose}`} markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" className="art-arrow"/></marker></defs>
       <rect className="art-bg" x="1" y="1" width="238" height="178" rx="18"/>
       {seated && <g className="equipment"><path d="M54 42v96M54 103h42v12H54M64 138h45"/><rect x="157" y="35" width="24" height="100" rx="4"/><path d="M169 45v80M145 75h24"/></g>}
@@ -59,7 +65,7 @@ export default function ExerciseArt({id, name, pose = 0}: {id: string; name: str
       <path className="motion" markerEnd={`url(#arrow-${id}-${pose})`} d={legIds.has(id) ? 'M119 151 Q150 129 156 103' : 'M126 44 Q151 66 143 94'}/>
       <text x="204" y="24" className="pose-number">{pose ? '02' : '01'}</text>
       {cardio && <text x="190" y="162" className="cardio-mark">CARDIO</text>}
-    </svg>
+    </svg>}
     <figcaption>{pose ? 'Posizione finale' : 'Posizione iniziale'}</figcaption>
   </figure>;
 }

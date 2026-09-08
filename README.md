@@ -60,7 +60,7 @@ Il progetto è già collegato a GitHub e Vercel. Vercel deve usare preset Vite, 
 ## Struttura
 
 ```text
-src/components/   navigazione, illustrazioni SVG e schede tecniche
+src/components/   navigazione, illustrazioni e schede tecniche
 src/data/         esercizi e programmi A/B/C/D
 src/hooks/        stato condiviso e persistenza
 src/pages/        Oggi, Calendario, Progressi, Corpo, Esercizi, Impostazioni
@@ -70,4 +70,4 @@ src/utils/        fasi, pianificazione, aderenza e volume
 vite.config.ts    manifest e service worker PWA
 ```
 
-Le illustrazioni sono schematiche e non sostituiscono l’indicazione di un professionista. Interrompere l’esercizio in caso di dolore acuto.
+Le illustrazioni mostrano posizione iniziale e finale, ma non sostituiscono l’indicazione di un professionista. Interrompere l’esercizio in caso di dolore acuto.
