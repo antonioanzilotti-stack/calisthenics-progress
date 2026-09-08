@@ -1,39 +1,66 @@
-import{useState}from'react';
-import{ChevronLeft,ChevronRight,TrendingUp}from'lucide-react';
-import{useApp}from'../hooks/useApp';
-import{getExercise}from'../data/exercises';
-import{getPlanDay,plannedStatus,planSummary,PLAN_END,PLAN_START}from'../utils/trainingPlan';
+import {useMemo, useState} from 'react';
+import {ChevronLeft, ChevronRight, CalendarCheck} from 'lucide-react';
+import {useApp} from '../hooks/useApp';
+import {getExercise} from '../data/exercises';
+import {getPlannedWorkoutId, getProgramInfo, localIso, plannedStatus} from '../utils/trainingPlan';
+import type {Session, Status, Workout} from '../types';
 
-const iso=(date:Date)=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+const statuses: Status[] = ['programmato','completato','parziale','saltato','recuperato','riposo'];
 
-export default function Calendar(){
-  const{data}=useApp();
-  const[month,setMonth]=useState(new Date());
-  const[selected,setSelected]=useState(iso(new Date()));
-  const y=month.getFullYear(),m=month.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
-  const cells=[...Array((first+6)%7).fill(null),...Array.from({length:days},(_,i)=>i+1)];
-  const key=(d:number)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  const sel=data.sessions.find(s=>s.date===selected);const plan=getPlanDay(selected,data);const workout=data.workouts.find(w=>w.id===(sel?.workoutId||plan?.workoutId));const summary=planSummary(data);
-  const canPrev=new Date(y,m-1,1)>=new Date(2026,6,1);const canNext=new Date(y,m+1,1)<=new Date(2026,8,1);
+export default function Calendar() {
+  const {data, setData} = useApp();
+  const [month, setMonth] = useState(() => {const now = new Date(); return new Date(now.getFullYear(), now.getMonth(), 1)});
+  const [selected, setSelected] = useState(localIso());
+  const year = month.getFullYear(), monthIndex = month.getMonth();
+  const first = (new Date(year, monthIndex, 1).getDay() + 6) % 7;
+  const days = new Date(year, monthIndex + 1, 0).getDate();
+  const cells = [...Array(first).fill(null), ...Array.from({length: days}, (_, index) => index + 1)];
+  const dateKey = (day: number) => `${year}-${String(monthIndex + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const selectedSession = data.sessions.find(session => session.date === selected);
+  const plannedId = getPlannedWorkoutId(selected, data);
+  const selectedWorkout = data.workouts.find(workout => workout.id === (selectedSession?.workoutId || plannedId));
+  const info = getProgramInfo(data, selected);
+
+  const monthStats = useMemo(() => {
+    const prefix = `${year}-${String(monthIndex + 1).padStart(2,'0')}`;
+    const sessions = data.sessions.filter(session => session.date.startsWith(prefix));
+    return {completed:sessions.filter(session => ['completato','recuperato'].includes(session.status)).length,
+      skipped:sessions.filter(session => session.status === 'saltato').length,recovered:sessions.filter(session => session.status === 'recuperato').length};
+  }, [data.sessions, year, monthIndex]);
+
+  const setPlan = (value: string) => setData(current => ({...current,
+    plannedDates: {...current.plannedDates, [selected]: value ? value as Workout['id'] : null},
+  }));
+
+  const setStatus = (status: Status) => setData(current => {
+    if (status === 'programmato') return {...current, sessions: current.sessions.filter(item => item.date !== selected),
+      plannedDates: {...current.plannedDates, [selected]: (selectedSession?.workoutId || plannedId || 'a') as Workout['id']}};
+    if (status === 'riposo') return {...current, sessions: current.sessions.filter(item => item.date !== selected), plannedDates: {...current.plannedDates, [selected]: null}};
+    const workoutId = (selectedSession?.workoutId || plannedId || 'a') as Workout['id'];
+    const session: Session = selectedSession ? {...selectedSession, status, workoutId} : {
+      id: crypto.randomUUID(), date: selected, workoutId, status, duration: 0, notes: '', rpe: null, logs: {}, conditioning: [],
+    };
+    return {...current, sessions: [...current.sessions.filter(item => item.date !== selected), session], plannedDates: {...current.plannedDates, [selected]: workoutId}};
+  });
+
   return <>
-    <header><span className="eyebrow">Pianificazione adattiva</span><h1>Calendario</h1><p className="lede">Programma completo dal 6 luglio al 30 settembre.</p></header>
-    <section className="plan-banner card"><TrendingUp/><div><b>{summary.weeks} settimane · {summary.sessions} sessioni</b><p>Tre settimane di crescita e una di scarico. Il carico si adatta a completamento e difficoltà percepita.</p></div></section>
-    <div className="month-tabs">{['Luglio','Agosto','Settembre'].map((label,index)=><button className={m===index+6?'active':''} onClick={()=>setMonth(new Date(2026,index+6,1))} key={label}>{label}</button>)}</div>
+    <header><span className="eyebrow">Pianificazione flessibile</span><h1>Calendario</h1><p className="lede">Scegli liberamente quando fare A, B, C e D. I giorni prima del primo utilizzo non diventano saltati.</p></header>
+    <section className="plan-banner card"><CalendarCheck/><div><b>Settimana {info.displayWeek} di 6 · {info.phase}</b><p>{info.objective} RIR target {info.rirTarget}.</p></div></section>
+    <section className="calendar-summary"><span><b>{monthStats.completed}</b> completati</span><span><b>{monthStats.skipped}</b> saltati</span><span><b>{monthStats.recovered}</b> recuperi</span></section>
     <section className="calendar card">
-      <div className="month"><button className="icon" disabled={!canPrev} onClick={()=>setMonth(new Date(y,m-1))}><ChevronLeft/></button><h2>{new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric'}).format(month)}</h2><button className="icon" disabled={!canNext} onClick={()=>setMonth(new Date(y,m+1))}><ChevronRight/></button></div>
-      <div className="week">{['L','M','M','G','V','S','D'].map((x,i)=><b key={i}>{x}</b>)}</div>
-      <div className="days">{cells.map((d,i)=>d?<button key={i} onClick={()=>setSelected(key(d))} className={selected===key(d)?'selected':''}><span>{d}</span>{(getPlanDay(key(d),data)||data.sessions.some(s=>s.date===key(d)))&&<i className={plannedStatus(key(d),data)}/>}</button>:<i key={i}/>)}</div>
-      <div className="legend"><span><i className="completato"/>Completato</span><span><i className="saltato"/>Saltato</span><span><i className="parziale"/>Parziale</span><span><i className="programmato"/>Programmato</span></div>
+      <div className="month"><button className="icon" onClick={() => setMonth(new Date(year,monthIndex-1,1))}><ChevronLeft/></button><h2>{new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric'}).format(month)}</h2><button className="icon" onClick={() => setMonth(new Date(year,monthIndex+1,1))}><ChevronRight/></button></div>
+      <div className="week">{['L','M','M','G','V','S','D'].map((label,index) => <b key={index}>{label}</b>)}</div>
+      <div className="days">{cells.map((day,index) => day ? <button key={index} onClick={() => setSelected(dateKey(day))} className={selected===dateKey(day)?'selected':''}><span>{day}</span>{(getPlannedWorkoutId(dateKey(day),data)||data.sessions.some(session=>session.date===dateKey(day)))&&<i className={plannedStatus(dateKey(day),data)}/>}</button> : <i key={index}/>)}</div>
+      <div className="legend">{statuses.map(status => <span key={status}><i className={status}/>{status}</span>)}</div>
     </section>
     <section className="card day-detail">
-      <span className="eyebrow">{new Date(selected+'T12:00').toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})}</span>
-      {workout?<><div className="day-title"><div><h2>{workout.name}</h2><span className={`pill ${plannedStatus(selected,data)}`}>{plannedStatus(selected,data)}</span></div>{plan&&<b>Settimana {plan.week}</b>}</div>
-        {plan&&<div className={`phase ${plan.mode}`}><b>{plan.phase} · ciclo {plan.cycle}</b><p>{plan.reason}</p></div>}
-        {sel&&<p>{sel.duration} minuti · Intensità {sel.rpe||'—'}/10 {sel.reason&&`· ${sel.reason}`}</p>}
-        {plan&&<div className="plan-exercises">{plan.exercises.map(e=><div key={e.exerciseId}><span>{getExercise(e.exerciseId).name}</span><b>{e.sets}× {e.reps?`${e.reps} rip.`:`${e.seconds} sec.`}</b></div>)}</div>}
-        {sel?.notes&&<p>{sel.notes}</p>}
-      </>:<><h2>Riposo e recupero</h2><p>Mobilità leggera o passeggiata facoltativa. Nessuna sessione programmata.</p></>}
+      <span className="eyebrow">{new Date(selected+'T12:00').toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>
+      <div className="calendar-edit-grid"><label>Sessione<select value={selectedWorkout?.id || ''} onChange={event => setPlan(event.target.value)}><option value="">Riposo</option>{data.workouts.map(workout => <option key={workout.id} value={workout.id}>{workout.short} — {workout.name}</option>)}</select></label><label>Stato<select value={plannedStatus(selected,data)} onChange={event => setStatus(event.target.value as Status)}>{statuses.map(status => <option key={status}>{status}</option>)}</select></label></div>
+      {selectedWorkout ? <><div className="day-title"><div><h2>{selectedWorkout.short} · {selectedWorkout.name}</h2><span className={`pill ${plannedStatus(selected,data)}`}>{plannedStatus(selected,data)}</span></div><b>{selectedWorkout.duration}</b></div><p>{selectedWorkout.focus}</p>
+        {selectedSession && <p>{selectedSession.duration} minuti reali · RPE {selectedSession.rpe ?? '—'}/10 {selectedSession.reason ? `· ${selectedSession.reason}` : ''}</p>}
+        <div className="plan-exercises">{selectedWorkout.exercises.map(item => <div key={item.exerciseId}><span>{getExercise(item.exerciseId).name}</span><b>{item.sets}× {item.reps ? `${item.reps} rip.` : `${item.seconds} sec.`}</b></div>)}</div>
+        {selectedSession?.notes && <p className="session-calendar-note">{selectedSession.notes}</p>}
+      </> : <><h2>Riposo</h2><p>Nessuna sessione programmata. Puoi assegnarne una dal menu qui sopra.</p></>}
     </section>
-    <small className="plan-range">Piano attivo: {new Date(PLAN_START+'T12:00').toLocaleDateString('it-IT')} – {new Date(PLAN_END+'T12:00').toLocaleDateString('it-IT')}</small>
   </>;
 }
