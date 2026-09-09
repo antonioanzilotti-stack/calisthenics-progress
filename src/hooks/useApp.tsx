@@ -24,8 +24,9 @@ export function AppProvider({children}: {children: ReactNode}) {
   const resetProgram = () => setData(current => ({
     ...current,
     workouts,
-    schedule: initialData().schedule,
+    schedule: {},
     plannedDates: {},
+    preferredSubstitutions: {},
     activeSession: null,
     preferences: {...current.preferences, programStartedAt: localIso()},
   }));

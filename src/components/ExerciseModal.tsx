@@ -17,7 +17,7 @@ export default function ExerciseModal({e, onClose}: {e: Exercise; onClose: () =>
         <div><b>Regolazione base</b><p>{e.machineSetup}</p></div>
       </div>
       <p className="warning"><b>Sicurezza</b><br/>{e.safety}</p>
-      <small className="photo-credit">Schema tecnico locale in SVG · nessuna immagine o dipendenza esterna.</small>
+      <small className="photo-credit">Illustrazione didattica locale · posizione iniziale e finale disponibili anche offline.</small>
     </section>
   </div>;
 }

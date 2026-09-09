@@ -2,8 +2,8 @@ import {useState} from 'react';
 
 type Point = [number, number];
 
-const floorIds = new Set(['plank', 'dead-bug']);
-const standingIds = new Set(['lateral-raise','triceps-pushdown','glute-machine','calf-machine','pallof-press','elliptical','stair-climber','walk','incline-walk','boxing','jump-rope']);
+const floorIds = new Set(['plank', 'dead-bug', 'crunch', 'bird-dog']);
+const standingIds = new Set(['lateral-raise','lateral-cable','triceps-pushdown','pullover-cable','curl-cable','woodchopper','glute-machine','calf-machine','pallof-press','elliptical','stair-climber','walk','incline-walk','boxing','jump-rope']);
 const legIds = new Set(['leg-press','leg-curl','leg-extension','glute-machine','hip-thrust','calf-machine','bike','elliptical','stair-climber','walk','incline-walk']);
 
 function armPoints(id: string, pose: number): [Point, Point, Point, Point] {

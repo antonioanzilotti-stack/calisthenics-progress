@@ -1,6 +1,6 @@
 # Asset e illustrazioni
 
-Le dimostrazioni degli esercizi sono 58 illustrazioni WebP originali generate per il progetto, conservate localmente in `public/illustrations-v3`. Mostrano le posizioni iniziale e finale dei 29 esercizi con personaggi illustrati, senza persone reali. Il componente `src/components/ExerciseArt.tsx` mantiene anche uno schema SVG locale come fallback tecnico.
+Le dimostrazioni degli esercizi sono 78 illustrazioni WebP originali generate per il progetto, conservate localmente in `public/illustrations-v3`. Mostrano le posizioni iniziale e finale dei 39 esercizi con personaggi illustrati, senza persone reali. Il componente `src/components/ExerciseArt.tsx` mantiene anche uno schema SVG locale come fallback tecnico.
 
 - nessuna fotografia e nessuna persona reale;
 - nessun URL o asset esterno instabile;

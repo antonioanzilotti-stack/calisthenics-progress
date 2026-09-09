@@ -1,23 +1,17 @@
-import {Download, Upload, Trash2, RotateCcw, SunMoon, WifiOff, CalendarDays, ShieldCheck} from 'lucide-react';
+import {Download, Upload, Trash2, RotateCcw, SunMoon, WifiOff, CalendarCheck, ShieldCheck} from 'lucide-react';
 import {useRef} from 'react';
 import {useApp} from '../hooks/useApp';
-import {download, exportCsv, isCompatibleBackup, MIGRATION_KEY} from '../storage/store';
-import type {AppData, Workout} from '../types';
-
-const days = [[1,'Lunedì'],[2,'Martedì'],[3,'Mercoledì'],[4,'Giovedì'],[5,'Venerdì'],[6,'Sabato'],[0,'Domenica']] as const;
+import {download, exportCsv, MIGRATION_KEY, normalizeBackup} from '../storage/store';
+import type {AppData} from '../types';
 
 export default function Settings() {
   const {data, setData, clearAll, resetProgram} = useApp();
   const file = useRef<HTMLInputElement>(null);
   const preference = <K extends keyof AppData['preferences']>(key: K, value: AppData['preferences'][K]) =>
     setData(current => ({...current, preferences: {...current.preferences, [key]: value}}));
-  const setDay = (day: number, value: string) => setData(current => {
-    const schedule = {...current.schedule}; if (value) schedule[day] = value as Workout['id']; else delete schedule[day];
-    return {...current, schedule};
-  });
   const importData = (selected?: File) => {
     if (!selected) return; const reader = new FileReader();
-    reader.onload = () => {try {const parsed: unknown = JSON.parse(String(reader.result)); if (!isCompatibleBackup(parsed)) throw new Error(); setData(parsed); alert('Backup importato correttamente.');} catch {alert('Backup non valido o creato con il vecchio programma.')}};
+    reader.onload = () => {try {const parsed: unknown = JSON.parse(String(reader.result)); const migrated = normalizeBackup(parsed); if (!migrated) throw new Error(); setData(migrated); alert('Backup importato correttamente.');} catch {alert('Backup non valido o non compatibile con il programma palestra.')}};
     reader.readAsText(selected);
   };
   const deleteEverything = () => {
@@ -37,7 +31,7 @@ export default function Settings() {
       <label><span>Timer automatico dopo la serie</span><input type="checkbox" checked={data.preferences.autoRest} onChange={event=>preference('autoRest',event.target.checked)}/></label>
       <label><span>Unità</span><select value={data.preferences.unit} onChange={event=>preference('unit',event.target.value as 'metrico'|'imperiale')}><option value="metrico">Metrico</option><option value="imperiale">Imperiale</option></select></label>
     </section>
-    <section><div className="section-title"><h2>Pianificazione settimanale</h2><span>Modificabile</span></div><div className="schedule card"><p><CalendarDays/> Questa è solo una proposta: puoi cambiare ogni giorno o spostare una singola seduta dal calendario.</p>{days.map(([day,label])=><label key={day}><span>{label}</span><select value={data.schedule[day]||''} onChange={event=>setDay(day,event.target.value)}><option value="">Riposo</option>{data.workouts.map(workout=><option value={workout.id} key={workout.id}>{workout.short} — {workout.name}</option>)}</select></label>)}</div></section>
+    <section><div className="section-title"><h2>Sequenza flessibile</h2><span>Nessun giorno fisso</span></div><div className="schedule card"><p><CalendarCheck/> L’app suggerisce A → B → C → D in base all’ultimo allenamento completato. La scelta reale resta sempre tua e viene registrata nel calendario solo quando la confermi.</p></div></section>
     <section><h2>Dati e backup</h2><div className="action-list">
       <button onClick={()=>download('gym-strength-conditioning-backup.json',JSON.stringify(data,null,2),'application/json')}><Download/> Esporta backup JSON</button>
       <button onClick={()=>download('gym-strength-conditioning-dati.csv',exportCsv(data),'text/csv;charset=utf-8')}><Download/> Esporta dati CSV</button>
@@ -45,7 +39,7 @@ export default function Settings() {
       <button onClick={()=>{if(confirm('Reimpostare programma e calendario mantenendo storico, carichi e misure?'))resetProgram()}}><RotateCcw/> Reimposta solo programma</button>
       <button className="danger-action" onClick={deleteEverything}><Trash2/> Cancella tutti i dati</button>
     </div></section>
-    <section className="migration card"><ShieldCheck/><div><h3>Schema palestra v3 attivo</h3><p>{removedLegacy ? 'La migrazione ha rimosso lo storico calisthenics incompatibile.' : 'Archivio pulito, senza dati demo o record fittizi.'} Gli aggiornamenti PWA non cancellano questo archivio.</p></div></section>
+    <section className="migration card"><ShieldCheck/><div><h3>Schema palestra v4 attivo</h3><p>{removedLegacy ? 'La migrazione ha rimosso lo storico calisthenics incompatibile.' : 'Lo storico palestra compatibile è stato preservato.'} Gli aggiornamenti PWA non cancellano questo archivio.</p></div></section>
     <section className="offline card"><WifiOff/><div><h3>Pronta anche offline</h3><p>Dopo la prima visita, l’app resta disponibile senza connessione. I dati rimangono su questo dispositivo.</p></div></section>
     <section className="card"><h2>Installazione</h2><p>Android: menu del browser → <b>Installa app</b>. iPhone: Condividi → <b>Aggiungi alla schermata Home</b>.</p></section>
   </>;

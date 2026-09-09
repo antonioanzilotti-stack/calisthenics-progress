@@ -1,4 +1,6 @@
 export type Status = 'programmato' | 'completato' | 'saltato' | 'parziale' | 'recuperato' | 'riposo';
+export type CalendarStatus = 'suggerito' | 'selezionato' | 'in-corso' | 'completato' | 'parziale' | 'saltato' | 'riposo' | 'neutro';
+export type WorkoutId = 'a' | 'b' | 'c' | 'd';
 
 export type SetLog = {
   done: boolean;
@@ -56,6 +58,7 @@ export type Exercise = {
 
 export type WorkoutExercise = {
   exerciseId: string;
+  baseExerciseId?: string;
   sets: number;
   reps?: string;
   seconds?: string;
@@ -63,7 +66,7 @@ export type WorkoutExercise = {
 };
 
 export type Workout = {
-  id: 'a' | 'b' | 'c' | 'd';
+  id: WorkoutId;
   name: string;
   short: string;
   duration: string;
@@ -83,6 +86,7 @@ export type Session = {
   recoveredFrom?: string;
   logs: Record<string, SetLog[]>;
   conditioning: ConditioningLog[];
+  exercises?: WorkoutExercise[];
 };
 
 export type ActiveSession = {
@@ -93,6 +97,7 @@ export type ActiveSession = {
   pausedMs: number;
   logs: Record<string, SetLog[]>;
   conditioning: ConditioningLog[];
+  exercises: WorkoutExercise[];
   notes: string;
   rpe: number | null;
 };
@@ -117,11 +122,12 @@ export type Preferences = {
 };
 
 export type AppData = {
-  schemaVersion: 3;
+  schemaVersion: 4;
   sessions: Session[];
   workouts: Workout[];
   schedule: Partial<Record<number, Workout['id']>>;
-  plannedDates: Record<string, Workout['id'] | null>;
+  plannedDates: Record<string, Workout['id'] | 'riposo'>;
+  preferredSubstitutions: Record<string, string>;
   bodyRecords: BodyRecord[];
   activeSession: ActiveSession | null;
   preferences: Preferences;

@@ -16,7 +16,7 @@ export const workouts: Workout[] = [
       row('shoulder-press', 3, '10–12', undefined, 90),
       row('lateral-raise', 2, '12–15', undefined, 60),
       row('triceps-pushdown', 3, '10–12', undefined, 75),
-      row('ab-crunch', 3, '12–15', undefined, 60),
+      row('crunch', 3, '12–20', undefined, 60),
       row('plank', 2, undefined, '30–45', 60),
     ],
   },
@@ -26,25 +26,27 @@ export const workouts: Workout[] = [
       row('rower', 1, undefined, '300', 0),
       row('lat-machine', 3, '10–12', undefined, 90),
       row('seated-row', 3, '10–12', undefined, 90),
-      row('pullover', 2, '12–15', undefined, 75),
+      row('pullover-cable', 2, '12–15', undefined, 75),
       row('reverse-pec-deck', 3, '12–15', undefined, 60),
-      row('curl-machine', 3, '10–12', undefined, 75),
-      row('back-extension', 2, '12', undefined, 60),
+      row('curl-cable', 3, '10–12', undefined, 75),
+      row('bird-dog', 3, '8–10/lato', undefined, 60),
       row('dead-bug', 3, '8–10/lato', undefined, 45),
     ],
   },
   {
-    id: 'c', short: 'C', name: 'Gambe + Richiamo Upper', duration: '50–60 min', focus: 'Gambe, glutei, polpacci e richiamo parte alta',
+    id: 'c', short: 'C', name: 'Gambe + Richiamo Upper', duration: '50–60 min', focus: 'Gambe e richiamo completo della parte alta',
     exercises: [
       row('bike', 1, undefined, '300', 0),
       row('leg-press', 3, '10–12', undefined, 120),
       row('leg-curl', 3, '10–12', undefined, 90),
       row('leg-extension', 3, '10–12', undefined, 90),
-      row('glute-machine', 3, '10–12', undefined, 90),
-      row('calf-machine', 3, '12–15', undefined, 60),
-      row('chest-press', 2, '12', undefined, 75),
-      row('lat-machine', 2, '12', undefined, 75),
-      row('pallof-press', 2, '10/lato', undefined, 60),
+      row('chest-press', 3, '10–12', undefined, 90),
+      row('lat-machine', 3, '10–12', undefined, 90),
+      row('shoulder-press', 2, '10–12', undefined, 90),
+      row('seated-row', 2, '10–12', undefined, 90),
+      row('triceps-pushdown', 2, '12–15', undefined, 60),
+      row('curl-cable', 2, '12–15', undefined, 60),
+      row('woodchopper', 2, '10–12/lato', undefined, 60),
     ],
   },
   {
@@ -59,15 +61,16 @@ export const workouts: Workout[] = [
 ];
 
 export const conditioningActivities: ConditioningActivity[] = [
-  'Camminata', 'Camminata inclinata', 'Vogatore', 'Cyclette', 'Ellittica', 'Stair Climber', 'Boxe', 'Corda',
+  'Camminata', 'Camminata inclinata', 'Vogatore', 'Cyclette', 'Boxe', 'Corda',
 ];
 
 export function emptySet(): SetLog {
   return {done: false, weight: null, reps: null, seconds: null, rir: null, notes: ''};
 }
 
-export function emptyLogs(workout: Workout): Record<string, SetLog[]> {
-  return Object.fromEntries(workout.exercises.map(item => [item.exerciseId, Array.from({length: item.sets}, emptySet)]));
+export function emptyLogs(source: Workout | WorkoutExercise[]): Record<string, SetLog[]> {
+  const rows = Array.isArray(source) ? source : source.exercises;
+  return Object.fromEntries(rows.map(item => [item.exerciseId, Array.from({length: item.sets}, emptySet)]));
 }
 
 export function defaultConditioning(): ConditioningLog[] {
@@ -82,11 +85,12 @@ export function defaultConditioning(): ConditioningLog[] {
 export function initialData(): AppData {
   const today = localIso();
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     sessions: [],
     workouts,
-    schedule: {1: 'a', 3: 'b', 5: 'c', 6: 'd'},
+    schedule: {},
     plannedDates: {},
+    preferredSubstitutions: {},
     bodyRecords: [],
     activeSession: null,
     preferences: {theme: 'light', rest: 75, autoRest: true, unit: 'metrico', createdAt: today, programStartedAt: today},

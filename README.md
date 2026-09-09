@@ -9,7 +9,7 @@ PWA mobile-first in italiano per recupero della forma, forza, definizione, dimag
 - C — Gambe + Richiamo Upper, 50–60 minuti
 - D — Conditioning / Cardio libero, 35–50 minuti
 
-La pianificazione settimanale suggerita è interamente modificabile. La fase iniziale dura sei settimane: Adattamento (1–2), Progressione (3–4), Consolidamento (5–6). La doppia progressione segnala quando tutte le serie raggiungono il limite alto del range, ma il carico non viene mai modificato automaticamente.
+Non esiste un calendario settimanale rigido: il suggerimento segue A → B → C → D usando solo l’ultimo allenamento realmente completato, mentre ogni giorno si può scegliere liberamente A, B, C, D o Riposo. La fase iniziale dura sei settimane dal primo allenamento registrato: Adattamento (1–2), Progressione (3–4), Consolidamento (5–6). La doppia progressione segnala quando tutte le serie raggiungono il limite alto del range, ma il carico non viene mai modificato automaticamente.
 
 ## Funzioni principali
 
@@ -17,7 +17,7 @@ La pianificazione settimanale suggerita è interamente modificabile. La fase ini
 - timer di recupero 30/45/60/75/90/120 secondi, con avvio automatico opzionale;
 - sessioni avviabili, persistenti, pausabili, terminabili, saltate o spostate;
 - conditioning personalizzabile con minuti, distanza, calorie manuali, intensità e note;
-- calendario modificabile con stati programmato, completato, parziale, saltato, recuperato e riposo;
+- calendario dinamico con stati selezionato, in corso, completato, parziale, saltato, riposo e giorno neutro;
 - grafici di carichi, ripetizioni, volume, gruppi muscolari, aderenza, durata e conditioning;
 - peso corporeo e misure opzionali separati dai carichi delle macchine;
 - backup JSON, import JSON compatibile ed export CSV completo;
@@ -41,7 +41,7 @@ npm run preview
 
 ## Migrazione e persistenza
 
-Il nuovo schema usa la chiave `calisthenics-progress-gym-v3`. Alla prima apertura senza dati v3 elimina le chiavi legacy `calisthenics-progress`, `calisthenics-progress-v1` e `calisthenics-progress-v2`, quindi crea il nuovo programma con storico, carichi, peso corporeo e record vuoti. Dopo la migrazione, refresh e aggiornamenti del service worker mantengono i dati v3.
+Il nuovo schema usa la chiave `calisthenics-progress-gym-v4`. Alla prima apertura migra automaticamente i dati palestra v3 compatibili, conservando sessioni, carichi, misure corporee e preferenze. Le vecchie chiavi calisthenics precedenti al programma palestra non vengono reintrodotte.
 
 Le operazioni in Impostazioni sono distinte:
 
@@ -65,7 +65,7 @@ src/data/         esercizi e programmi A/B/C/D
 src/hooks/        stato condiviso e persistenza
 src/pages/        Oggi, Calendario, Progressi, Corpo, Esercizi, Impostazioni
 src/storage/      migrazione, localStorage, import/export
-src/types/        schema dati TypeScript v3
+src/types/        schema dati TypeScript v4
 src/utils/        fasi, pianificazione, aderenza e volume
 vite.config.ts    manifest e service worker PWA
 ```
