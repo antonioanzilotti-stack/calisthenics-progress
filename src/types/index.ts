@@ -1,6 +1,6 @@
 export type Status = 'programmato' | 'completato' | 'saltato' | 'parziale' | 'recuperato' | 'riposo';
 export type CalendarStatus = 'suggerito' | 'selezionato' | 'in-corso' | 'completato' | 'parziale' | 'saltato' | 'riposo' | 'neutro';
-export type WorkoutId = 'a' | 'b' | 'c' | 'd';
+export type WorkoutId = 'a' | 'b' | 'c' | 'd' | 'e';
 
 export type SetLog = {
   done: boolean;
@@ -9,6 +9,7 @@ export type SetLog = {
   seconds: number | null;
   rir: number | null;
   notes: string;
+  warmup?: boolean;
 };
 
 export type ConditioningActivity =
@@ -54,15 +55,20 @@ export type Exercise = {
   reps?: string;
   seconds?: string;
   rest: number;
+  visualVerified?: boolean;
+  imageDataUrl?: string;
+  custom?: boolean;
 };
 
 export type WorkoutExercise = {
   exerciseId: string;
+  instanceId?: string;
   baseExerciseId?: string;
   sets: number;
   reps?: string;
   seconds?: string;
   rest: number;
+  superset?: string;
 };
 
 export type Workout = {
@@ -84,12 +90,18 @@ export type Session = {
   rpe: number | null;
   reason?: string;
   recoveredFrom?: string;
+  startedAt?: number;
+  completedAt?: number;
+  workoutName?: string;
+  workoutShort?: string;
+  records?: string[];
   logs: Record<string, SetLog[]>;
   conditioning: ConditioningLog[];
   exercises?: WorkoutExercise[];
 };
 
 export type ActiveSession = {
+  id: string;
   date: string;
   workoutId: Workout['id'];
   startedAt: number;
@@ -122,12 +134,13 @@ export type Preferences = {
 };
 
 export type AppData = {
-  schemaVersion: 4;
+  schemaVersion: 5;
   sessions: Session[];
   workouts: Workout[];
   schedule: Partial<Record<number, Workout['id']>>;
   plannedDates: Record<string, Workout['id'] | 'riposo'>;
   preferredSubstitutions: Record<string, string>;
+  customExercises: Exercise[];
   bodyRecords: BodyRecord[];
   activeSession: ActiveSession | null;
   preferences: Preferences;

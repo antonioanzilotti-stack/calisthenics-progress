@@ -31,7 +31,7 @@ export default function Settings() {
       <label><span>Timer automatico dopo la serie</span><input type="checkbox" checked={data.preferences.autoRest} onChange={event=>preference('autoRest',event.target.checked)}/></label>
       <label><span>Unità</span><select value={data.preferences.unit} onChange={event=>preference('unit',event.target.value as 'metrico'|'imperiale')}><option value="metrico">Metrico</option><option value="imperiale">Imperiale</option></select></label>
     </section>
-    <section><div className="section-title"><h2>Sequenza flessibile</h2><span>Nessun giorno fisso</span></div><div className="schedule card"><p><CalendarCheck/> L’app suggerisce A → B → C → D in base all’ultimo allenamento completato. La scelta reale resta sempre tua e viene registrata nel calendario solo quando la confermi.</p></div></section>
+    <section><div className="section-title"><h2>Sequenza flessibile</h2><span>Nessun giorno fisso</span></div><div className="schedule card"><p><CalendarCheck/> L’app suggerisce A Upper 1 → B Lower 1 → C Upper 2 → D Lower 2. Il conditioning E è facoltativo e non interrompe la rotazione.</p></div></section>
     <section><h2>Dati e backup</h2><div className="action-list">
       <button onClick={()=>download('gym-strength-conditioning-backup.json',JSON.stringify(data,null,2),'application/json')}><Download/> Esporta backup JSON</button>
       <button onClick={()=>download('gym-strength-conditioning-dati.csv',exportCsv(data),'text/csv;charset=utf-8')}><Download/> Esporta dati CSV</button>
@@ -39,8 +39,8 @@ export default function Settings() {
       <button onClick={()=>{if(confirm('Reimpostare programma e calendario mantenendo storico, carichi e misure?'))resetProgram()}}><RotateCcw/> Reimposta solo programma</button>
       <button className="danger-action" onClick={deleteEverything}><Trash2/> Cancella tutti i dati</button>
     </div></section>
-    <section className="migration card"><ShieldCheck/><div><h3>Schema palestra v4 attivo</h3><p>{removedLegacy ? 'La migrazione ha rimosso lo storico calisthenics incompatibile.' : 'Lo storico palestra compatibile è stato preservato.'} Gli aggiornamenti PWA non cancellano questo archivio.</p></div></section>
-    <section className="offline card"><WifiOff/><div><h3>Pronta anche offline</h3><p>Dopo la prima visita, l’app resta disponibile senza connessione. I dati rimangono su questo dispositivo.</p></div></section>
+    <section className="migration card"><ShieldCheck/><div><h3>Schema palestra v5 attivo</h3><p>{removedLegacy ? 'La migrazione ha rimosso lo storico calisthenics incompatibile.' : 'Lo storico palestra compatibile e le vecchie schede restano consultabili.'} Gli aggiornamenti PWA non cancellano questo archivio.</p></div></section>
+    <section className="offline card"><WifiOff/><div><h3>Dati locali, non sincronizzati</h3><p>I dati restano su questo dispositivo e non si sincronizzano automaticamente con altri telefoni. Cancellare i dati del browser o disinstallare la PWA può eliminarli: esporta periodicamente il backup JSON.</p></div></section>
     <section className="card"><h2>Installazione</h2><p>Android: menu del browser → <b>Installa app</b>. iPhone: Condividi → <b>Aggiungi alla schermata Home</b>.</p></section>
   </>;
 }

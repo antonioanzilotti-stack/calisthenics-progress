@@ -7,7 +7,7 @@ export default function ExerciseModal({e, onClose}: {e: Exercise; onClose: () =>
     <section className="modal" role="dialog" aria-modal="true" aria-label={e.name} onMouseDown={event => event.stopPropagation()}>
       <button className="icon close" onClick={onClose} aria-label="Chiudi"><X/></button>
       <span className="eyebrow">{e.group} · {e.equipment}</span><h2>{e.name}</h2>
-      <div className="poses"><ExerciseArt id={e.id} name={e.name}/><ExerciseArt id={e.id} name={e.name} pose={1}/></div>
+      <div className="poses"><ExerciseArt id={e.id} name={e.name} verified={e.visualVerified} imageDataUrl={e.imageDataUrl}/><ExerciseArt id={e.id} name={e.name} pose={1} verified={e.visualVerified} imageDataUrl={e.imageDataUrl}/></div>
       <div className="position-notes"><p><b>01 · Posizione iniziale</b>{e.startPosition}</p><p><b>02 · Posizione finale</b>{e.endPosition}</p></div>
       <h3>Esecuzione</h3><ol>{e.steps.map((step, index) => <li key={`${e.id}-${index}`}>{step}</li>)}</ol>
       <div className="detail-grid">
@@ -17,7 +17,7 @@ export default function ExerciseModal({e, onClose}: {e: Exercise; onClose: () =>
         <div><b>Regolazione base</b><p>{e.machineSetup}</p></div>
       </div>
       <p className="warning"><b>Sicurezza</b><br/>{e.safety}</p>
-      <small className="photo-credit">Illustrazione didattica locale · posizione iniziale e finale disponibili anche offline.</small>
+      <small className="photo-credit">{e.imageDataUrl ? 'Immagine personale salvata nel backup locale.' : e.visualVerified === false ? 'Asset visivo non ancora verificato: usa le istruzioni testuali e chiedi conferma a un professionista.' : 'Illustrazione didattica locale · posizione iniziale e finale disponibili anche offline.'}</small>
     </section>
   </div>;
 }

@@ -1,54 +1,103 @@
-import type {ActiveSession, AppData, Session, Workout, WorkoutExercise} from '../types';
+import type {ActiveSession, AppData, Exercise, Session, Workout, WorkoutExercise, WorkoutId} from '../types';
 import {initialData, workouts} from '../data/defaults';
 
-export const STORAGE_KEY = 'calisthenics-progress-gym-v4';
+export const STORAGE_KEY = 'calisthenics-progress-gym-v5';
 export const MIGRATION_KEY = 'calisthenics-progress-migration';
-const V3_STORAGE_KEY = 'calisthenics-progress-gym-v3';
-const LEGACY_KEYS = ['calisthenics-progress', 'calisthenics-progress-v1', 'calisthenics-progress-v2'];
+const PREVIOUS_KEYS = ['calisthenics-progress-gym-v4','calisthenics-progress-gym-v3'];
+const LEGACY_KEYS = ['calisthenics-progress','calisthenics-progress-v1','calisthenics-progress-v2'];
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
-const isWorkoutId = (value: unknown): value is Workout['id'] => ['a', 'b', 'c', 'd'].includes(String(value));
+const isWorkoutId = (value: unknown): value is WorkoutId => ['a','b','c','d','e'].includes(String(value));
+const asNumber = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 
 export function isCompatibleBackup(value: unknown) {
-  return isObject(value) && [3, 4].includes(Number(value.schemaVersion)) && Array.isArray(value.sessions)
+  return isObject(value) && [3,4,5].includes(Number(value.schemaVersion)) && Array.isArray(value.sessions)
     && Array.isArray(value.bodyRecords) && Array.isArray(value.workouts) && isObject(value.preferences);
 }
 
-function normalizePlans(value: unknown): AppData['plannedDates'] {
+function mappedWorkoutId(value: unknown, legacy: boolean, rawWorkout?: Workout): WorkoutId {
+  if (legacy && value === 'd' && rawWorkout?.name.toLowerCase().includes('conditioning')) return 'e';
+  return isWorkoutId(value) ? value : 'a';
+}
+
+function normalizePlans(value: unknown, legacy: boolean, rawWorkouts: Workout[]): AppData['plannedDates'] {
   if (!isObject(value)) return {};
   const plans: AppData['plannedDates'] = {};
   Object.entries(value).forEach(([date, selection]) => {
-    if (isWorkoutId(selection)) plans[date] = selection;
-    else if (selection === null || selection === 'riposo') plans[date] = 'riposo';
+    if (selection === null || selection === 'riposo') plans[date] = 'riposo';
+    else if (isWorkoutId(selection)) {
+      const rawWorkout = rawWorkouts.find(workout => workout.id === selection);
+      plans[date] = mappedWorkoutId(selection, legacy, rawWorkout);
+    }
   });
   return plans;
 }
 
-function normalizeActive(raw: Record<string, unknown>, rawWorkouts: Workout[]): ActiveSession | null {
-  if (!isObject(raw.activeSession) || !isWorkoutId(raw.activeSession.workoutId)) return null;
-  const active = raw.activeSession as unknown as Omit<ActiveSession, 'exercises'> & {exercises?: WorkoutExercise[]};
-  const previousWorkout = rawWorkouts.find(workout => workout.id === active.workoutId);
-  const currentWorkout = workouts.find(workout => workout.id === active.workoutId);
-  const exercises = Array.isArray(active.exercises) ? active.exercises : previousWorkout?.exercises || currentWorkout?.exercises || [];
-  return {...active, exercises};
+function normalizeExerciseRows(rows: WorkoutExercise[], logs: Session['logs']): WorkoutExercise[] {
+  return rows.map((item,index) => ({...item, instanceId:item.instanceId || (logs[item.exerciseId] ? item.exerciseId : `legacy-${item.exerciseId}-${index}`)}));
+}
+
+function normalizeSessions(raw: Record<string, unknown>, rawWorkouts: Workout[], legacy: boolean): Session[] {
+  if (!Array.isArray(raw.sessions)) return [];
+  return raw.sessions.filter(isObject).map((value,index) => {
+    const rawSession = value as unknown as Session;
+    const oldWorkout = rawWorkouts.find(workout => workout.id === rawSession.workoutId);
+    const workoutId = mappedWorkoutId(rawSession.workoutId, legacy, oldWorkout);
+    const currentWorkout = workouts.find(workout => workout.id === workoutId);
+    const logs = isObject(rawSession.logs) ? rawSession.logs : {};
+    const sourceRows = Array.isArray(rawSession.exercises) && rawSession.exercises.length
+      ? rawSession.exercises : oldWorkout?.exercises || currentWorkout?.exercises || [];
+    const date = typeof rawSession.date === 'string' ? rawSession.date : new Date().toISOString().slice(0,10);
+    return {
+      ...rawSession,
+      id: typeof rawSession.id === 'string' && rawSession.id ? rawSession.id : `migrated-${date}-${index}-${crypto.randomUUID()}`,
+      date,
+      workoutId,
+      workoutName: rawSession.workoutName || oldWorkout?.name || currentWorkout?.name || 'Allenamento storico',
+      workoutShort: rawSession.workoutShort || oldWorkout?.short || currentWorkout?.short || workoutId.toUpperCase(),
+      duration: asNumber(rawSession.duration,0),
+      notes: typeof rawSession.notes === 'string' ? rawSession.notes : '',
+      rpe: typeof rawSession.rpe === 'number' ? rawSession.rpe : null,
+      logs: logs as Session['logs'],
+      conditioning: Array.isArray(rawSession.conditioning) ? rawSession.conditioning : [],
+      exercises: normalizeExerciseRows(sourceRows, logs as Session['logs']),
+      startedAt: asNumber(rawSession.startedAt, new Date(`${date}T12:00:00`).getTime()),
+      completedAt: asNumber(rawSession.completedAt, new Date(`${date}T13:00:00`).getTime()),
+      records: Array.isArray(rawSession.records) ? rawSession.records : [],
+    };
+  });
+}
+
+function normalizeActive(raw: Record<string, unknown>, rawWorkouts: Workout[], legacy: boolean): ActiveSession | null {
+  if (!isObject(raw.activeSession)) return null;
+  const source = raw.activeSession as unknown as ActiveSession;
+  const oldWorkout = rawWorkouts.find(workout => workout.id === source.workoutId);
+  const workoutId = mappedWorkoutId(source.workoutId, legacy, oldWorkout);
+  const currentWorkout = workouts.find(workout => workout.id === workoutId);
+  const logs = isObject(source.logs) ? source.logs : {};
+  const rows = Array.isArray(source.exercises) && source.exercises.length ? source.exercises : oldWorkout?.exercises || currentWorkout?.exercises || [];
+  return {...source,id:source.id || crypto.randomUUID(),workoutId,exercises:normalizeExerciseRows(rows,logs),logs,
+    conditioning:Array.isArray(source.conditioning)?source.conditioning:[],notes:source.notes || '',rpe:source.rpe ?? null};
 }
 
 function normalize(value: unknown): AppData {
   const fallback = initialData();
   if (!isObject(value)) return fallback;
+  const version = Number(value.schemaVersion);
+  const legacy = version < 5;
   const rawWorkouts = Array.isArray(value.workouts) ? value.workouts as Workout[] : [];
   const preferences = isObject(value.preferences) ? value.preferences as unknown as AppData['preferences'] : fallback.preferences;
   return {
     ...fallback,
-    schemaVersion: 4,
-    workouts,
-    schedule: {},
-    sessions: Array.isArray(value.sessions) ? value.sessions as Session[] : [],
-    bodyRecords: Array.isArray(value.bodyRecords) ? value.bodyRecords as AppData['bodyRecords'] : [],
-    plannedDates: normalizePlans(value.plannedDates),
-    preferredSubstitutions: isObject(value.preferredSubstitutions) ? value.preferredSubstitutions as Record<string, string> : {},
-    activeSession: normalizeActive(value, rawWorkouts),
-    preferences: {...fallback.preferences, ...preferences},
+    schemaVersion:5,
+    workouts:legacy ? workouts : rawWorkouts.length ? rawWorkouts : workouts,
+    sessions:normalizeSessions(value,rawWorkouts,legacy),
+    bodyRecords:Array.isArray(value.bodyRecords) ? value.bodyRecords as AppData['bodyRecords'] : [],
+    plannedDates:normalizePlans(value.plannedDates,legacy,rawWorkouts),
+    preferredSubstitutions:isObject(value.preferredSubstitutions) ? value.preferredSubstitutions as Record<string,string> : {},
+    customExercises:Array.isArray(value.customExercises) ? value.customExercises as Exercise[] : [],
+    activeSession:normalizeActive(value,rawWorkouts,legacy),
+    preferences:{...fallback.preferences,...preferences},
   };
 }
 
@@ -60,51 +109,43 @@ export function load(): AppData {
   try {
     const current = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
     if (isCompatibleBackup(current)) return normalize(current);
-
-    const previous = JSON.parse(localStorage.getItem(V3_STORAGE_KEY) || 'null');
-    if (isCompatibleBackup(previous)) {
-      const migrated = normalize(previous);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-      localStorage.setItem(MIGRATION_KEY, JSON.stringify({to: 4, migratedAt: new Date().toISOString(), action: 'gym-v3-preserved'}));
-      return migrated;
+    for (const key of PREVIOUS_KEYS) {
+      const previous = JSON.parse(localStorage.getItem(key) || 'null');
+      if (isCompatibleBackup(previous)) {
+        const migrated = normalize(previous);
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(migrated));
+        localStorage.setItem(MIGRATION_KEY,JSON.stringify({to:5,migratedAt:new Date().toISOString(),action:'gym-history-preserved'}));
+        return migrated;
+      }
     }
-
     const hadLegacyData = LEGACY_KEYS.some(key => localStorage.getItem(key) !== null);
     LEGACY_KEYS.forEach(key => localStorage.removeItem(key));
-    localStorage.setItem(MIGRATION_KEY, JSON.stringify({to: 4, migratedAt: new Date().toISOString(), action: hadLegacyData ? 'legacy-data-removed' : 'fresh-install'}));
-    return initialData();
-  } catch {
-    return initialData();
-  }
+    localStorage.setItem(MIGRATION_KEY,JSON.stringify({to:5,migratedAt:new Date().toISOString(),action:hadLegacyData?'legacy-data-removed':'fresh-install'}));
+    return fallbackAndSave();
+  } catch { return initialData(); }
 }
 
-export const save = (data: AppData) => localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+function fallbackAndSave() {
+  const data = initialData(); localStorage.setItem(STORAGE_KEY,JSON.stringify(data)); return data;
+}
+
+export const save = (data: AppData) => localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
 
 export function download(name: string, text: string, type: string) {
   const link = document.createElement('a');
-  link.href = URL.createObjectURL(new Blob([text], {type}));
-  link.download = name;
-  link.click();
-  URL.revokeObjectURL(link.href);
+  const url = URL.createObjectURL(new Blob([text],{type}));
+  link.href=url; link.download=name; link.hidden=true; document.body.appendChild(link); link.click(); link.remove();
+  window.setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
-const csv = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
+const csv = (value: unknown) => `"${String(value ?? '').replace(/"/g,'""')}"`;
 export function exportCsv(data: AppData) {
-  const rows: unknown[][] = [['tipo','data','sessione','stato','esercizio_attivita','serie','peso_kg','ripetizioni','rir','minuti','distanza','calorie','intensita','volume','note']];
+  const rows: unknown[][] = [['tipo','sessione_id','data_ora','scheda','stato','esercizio_attivita','serie','riscaldamento','peso_kg','ripetizioni','rir','minuti','distanza','calorie','intensita','volume','note']];
   data.sessions.forEach(session => {
-    Object.entries(session.logs).forEach(([exerciseId, sets]) => sets.forEach((set, index) => rows.push([
-      'serie', session.date, session.workoutId.toUpperCase(), session.status, exerciseId, index + 1, set.weight, set.reps,
-      set.rir, '', '', '', '', set.done && set.weight !== null && set.reps !== null ? set.weight * set.reps : 0, set.notes,
-    ])));
-    session.conditioning.forEach(item => rows.push([
-      'conditioning', session.date, session.workoutId.toUpperCase(), session.status, item.activity, '', '', '', '',
-      item.minutes, item.distance, item.calories, item.intensity, '', item.notes,
-    ]));
+    const exerciseByKey = Object.fromEntries((session.exercises || []).map(item => [item.instanceId || item.exerciseId,item.exerciseId]));
+    Object.entries(session.logs).forEach(([key,sets]) => sets.forEach((set,index) => rows.push(['serie',session.id,new Date(session.startedAt || `${session.date}T12:00:00`).toISOString(),session.workoutName || session.workoutId.toUpperCase(),session.status,exerciseByKey[key] || key,index+1,set.warmup?'sì':'no',set.weight,set.reps,set.rir,'','','','',set.done&&set.weight!==null&&set.reps!==null?set.weight*set.reps:0,set.notes])));
+    session.conditioning.forEach(item => rows.push(['conditioning',session.id,new Date(session.startedAt || `${session.date}T12:00:00`).toISOString(),session.workoutName || session.workoutId.toUpperCase(),session.status,item.activity,'','','','','',item.minutes,item.distance,item.calories,item.intensity,'',item.notes]));
   });
-  data.bodyRecords.forEach(record => rows.push([
-    'corpo', record.date, '', '', 'peso/misure', '', record.weight, '', '', '', '', '', '', '',
-    `vita:${record.waist ?? ''};torace:${record.chest ?? ''};braccio:${record.arm ?? ''};coscia:${record.thigh ?? ''}`,
-  ]));
+  data.bodyRecords.forEach(record => rows.push(['corpo','',record.date,'','','peso/misure','', '',record.weight,'','','','','','','',`vita:${record.waist??''};torace:${record.chest??''};braccio:${record.arm??''};coscia:${record.thigh??''}`]));
   return rows.map(row => row.map(csv).join(',')).join('\n');
 }
