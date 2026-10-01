@@ -4,12 +4,12 @@ PWA mobile-first in italiano per recupero della forma, forza, definizione, dimag
 
 ## Programma
 
-- A — Upper Body completo
+- A — Upper Body 1 · enfasi spinta
 - B — Lower Body + Core
-- C — Full Body
+- C — Upper Body 2 · enfasi tirata
 - E — Conditioning opzionale
 
-Il suggerimento di forza segue A → B → C usando solo l’ultimo allenamento di forza realmente completato. E resta sempre opzionale e non interrompe la rotazione. Ogni seduta base comprende sei esercizi di lavoro eseguiti singolarmente ed è calibrata per consentire l’aggiunta manuale di uno o due esercizi. Il carico non viene mai modificato automaticamente.
+Il suggerimento di forza segue A → B → C usando solo l’ultimo allenamento di forza realmente completato. A allena tutta la parte superiore con enfasi sulla spinta; C la allena con enfasi sulla tirata; B le separa per favorire il recupero. E resta opzionale e non interrompe la rotazione. Ogni seduta base comprende sei esercizi di lavoro eseguiti singolarmente ed è calibrata per consentire l’aggiunta manuale di uno o due esercizi. Il carico non viene mai modificato automaticamente.
 
 ## Funzioni principali
 
@@ -18,6 +18,8 @@ Il suggerimento di forza segue A → B → C usando solo l’ultimo allenamento 
 - sessioni avviabili, persistenti, pausabili, terminabili o saltate, anche più volte nello stesso giorno;
 - esercizi aggiungibili, sostituibili, riordinabili o rimovibili durante una sessione, senza perdere i dati già inseriti;
 - serie di riscaldamento e di lavoro aggiungibili o rimovibili;
+- doppia progressione con suggerimento del 2,5–5% soltanto quando tutte le serie raggiungono il limite alto con almeno 2 RIR;
+- settimana di scarico ogni sei settimane, con riduzione consigliata di volume o carico;
 - conditioning opzionale con Camminata, Camminata inclinata, Vogatore, Corda e Boxe; nessuna corsa, ellittica o stair climber;
 - libreria di oltre 65 esercizi con filtri, istruzioni, sostituzioni pertinenti e creazione di esercizi personali con immagine facoltativa;
 - Progressi interattivi con viste Forza, Sedute e Conditioning, filtri per periodo, gruppo ed esercizio;
@@ -43,7 +45,7 @@ npm run preview
 
 ## Migrazione e persistenza
 
-Il nuovo schema usa la chiave `calisthenics-progress-gym-v7`. Alla prima apertura migra automaticamente i dati palestra v3, v4, v5 e v6 compatibili, conservando sessioni, carichi, misure corporee, esercizi personali e preferenze. Le vecchie sessioni restano leggibili.
+Il nuovo schema usa la chiave `calisthenics-progress-gym-v8`. Alla prima apertura migra automaticamente i dati palestra v3–v7 compatibili, conservando sessioni, carichi, misure corporee, esercizi personali e preferenze. Le vecchie sessioni, compresa la precedente Full Body, restano leggibili.
 
 Le operazioni in Impostazioni sono distinte:
 
@@ -67,7 +69,7 @@ src/data/         esercizi e programmi A/B/C/E
 src/hooks/        stato condiviso e persistenza
 src/pages/        Oggi, Progressi, Corpo, Esercizi, Impostazioni
 src/storage/      migrazione, localStorage, import/export
-src/types/        schema dati TypeScript v7
+src/types/        schema dati TypeScript v8
 src/utils/        fasi, sequenza, progressione e volume
 vite.config.ts    manifest e service worker PWA
 ```

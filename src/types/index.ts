@@ -1,5 +1,4 @@
 export type Status = 'programmato' | 'completato' | 'saltato' | 'parziale' | 'recuperato' | 'riposo';
-export type CalendarStatus = 'suggerito' | 'selezionato' | 'in-corso' | 'completato' | 'parziale' | 'saltato' | 'riposo' | 'neutro';
 export type WorkoutId = 'a' | 'b' | 'c' | 'd' | 'e';
 
 export type SetLog = {
@@ -137,7 +136,7 @@ export type Preferences = {
 };
 
 export type AppData = {
-  schemaVersion: 7;
+  schemaVersion: 8;
   sessions: Session[];
   workouts: Workout[];
   schedule: Partial<Record<number, Workout['id']>>;

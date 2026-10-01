@@ -8,7 +8,7 @@ const row = (exerciseId: string, sets: number, reps: string | undefined, seconds
 
 export const workouts: Workout[] = [
   {
-    id:'a', short:'A', name:'Upper Body completo', duration:'50–60 min', focus:'Spinta e tirata equilibrate, spalle e tricipiti',
+    id:'a', short:'A', name:'Upper Body 1 · Spinta', duration:'50–60 min', focus:'Petto, spalle e tricipiti con tirate di equilibrio',
     exercises:[
       row('bike',1,undefined,'300',0),
       row('chest-press',3,'8–12',undefined,90),
@@ -32,14 +32,14 @@ export const workouts: Workout[] = [
     ],
   },
   {
-    id:'c', short:'C', name:'Full Body', duration:'50–60 min', focus:'Richiamo completo con macchine guidate e cavi',
+    id:'c', short:'C', name:'Upper Body 2 · Tirata', duration:'50–60 min', focus:'Dorso, bicipiti e deltoidi posteriori con richiamo del petto',
     exercises:[
       row('rower',1,undefined,'300',0),
-      row('incline-chest-press',3,'10–12',undefined,90),
-      row('iso-lateral-row-machine',3,'10–12',undefined,90),
-      row('pendulum-squat-machine',3,'8–12',undefined,120),
-      row('lying-leg-curl',3,'10–12',undefined,90),
-      row('reverse-pec-deck',2,'12–15',undefined,60),
+      row('incline-chest-press',3,'8–12',undefined,90),
+      row('iso-lateral-row-machine',3,'8–12',undefined,90),
+      row('neutral-grip-pulldown',3,'10–12',undefined,90),
+      row('converging-chest-press',3,'10–12',undefined,90),
+      row('reverse-pec-deck',3,'12–15',undefined,60),
       row('curl-cable',2,'10–15',undefined,60),
     ],
   },
@@ -69,6 +69,6 @@ export function defaultConditioning(): ConditioningLog[] {
 
 export function initialData(): AppData {
   const today = localIso();
-  return {schemaVersion:7,sessions:[],workouts,schedule:{},plannedDates:{},preferredSubstitutions:{},customExercises:[],bodyRecords:[],activeSession:null,
+  return {schemaVersion:8,sessions:[],workouts,schedule:{},plannedDates:{},preferredSubstitutions:{},customExercises:[],bodyRecords:[],activeSession:null,
     preferences:{theme:'light',rest:75,autoRest:true,unit:'metrico',createdAt:today,programStartedAt:today}};
 }
