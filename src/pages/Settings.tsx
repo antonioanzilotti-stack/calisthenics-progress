@@ -1,4 +1,4 @@
-import {Download, Upload, Trash2, RotateCcw, SunMoon, WifiOff, CalendarCheck, ShieldCheck} from 'lucide-react';
+import {Download, Upload, Trash2, RotateCcw, SunMoon, WifiOff, ListChecks, ShieldCheck} from 'lucide-react';
 import {useRef} from 'react';
 import {useApp} from '../hooks/useApp';
 import {download, exportCsv, MIGRATION_KEY, normalizeBackup} from '../storage/store';
@@ -28,18 +28,18 @@ export default function Settings() {
     <section className="settings card">
       <label><span><SunMoon/>Tema</span><select value={data.preferences.theme} onChange={event=>preference('theme',event.target.value as 'light'|'dark')}><option value="light">Chiaro</option><option value="dark">Scuro</option></select></label>
       <label><span>Recupero predefinito</span><select value={data.preferences.rest} onChange={event=>preference('rest',Number(event.target.value))}>{[30,45,60,75,90,120].map(value=><option key={value} value={value}>{value} secondi</option>)}</select></label>
-      <label><span>Timer automatico dopo la coppia</span><input type="checkbox" checked={data.preferences.autoRest} onChange={event=>preference('autoRest',event.target.checked)}/></label>
+      <label><span>Timer automatico dopo ogni serie</span><input type="checkbox" checked={data.preferences.autoRest} onChange={event=>preference('autoRest',event.target.checked)}/></label>
       <label><span>Unità</span><select value={data.preferences.unit} onChange={event=>preference('unit',event.target.value as 'metrico'|'imperiale')}><option value="metrico">Metrico</option><option value="imperiale">Imperiale</option></select></label>
     </section>
-    <section><div className="section-title"><h2>Sequenza flessibile</h2><span>Nessun giorno fisso</span></div><div className="schedule card"><p><CalendarCheck/> L’app suggerisce A Upper 1 → B Lower 1 → C Upper 2 → D Lower 2. Il conditioning E è facoltativo e non interrompe la rotazione.</p></div></section>
+    <section><div className="section-title"><h2>Sequenza flessibile</h2><span>Nessun giorno fisso</span></div><div className="schedule card"><p><ListChecks/> L’app suggerisce A Upper Body → B Lower + Core → C Full Body. Il conditioning E è facoltativo e non interrompe la rotazione.</p></div></section>
     <section><h2>Dati e backup</h2><div className="action-list">
       <button onClick={()=>download('gym-strength-conditioning-backup.json',JSON.stringify(data,null,2),'application/json')}><Download/> Esporta backup JSON</button>
       <button onClick={()=>download('gym-strength-conditioning-dati.csv',exportCsv(data),'text/csv;charset=utf-8')}><Download/> Esporta dati CSV</button>
       <button onClick={()=>file.current?.click()}><Upload/> Importa backup JSON</button><input ref={file} hidden type="file" accept="application/json" onChange={event=>importData(event.target.files?.[0])}/>
-      <button onClick={()=>{if(confirm('Reimpostare programma e calendario mantenendo storico, carichi e misure?'))resetProgram()}}><RotateCcw/> Reimposta solo programma</button>
+      <button onClick={()=>{if(confirm('Reimpostare il programma mantenendo storico, carichi e misure?'))resetProgram()}}><RotateCcw/> Reimposta solo programma</button>
       <button className="danger-action" onClick={deleteEverything}><Trash2/> Cancella tutti i dati</button>
     </div></section>
-    <section className="migration card"><ShieldCheck/><div><h3>Schema palestra v6 attivo</h3><p>{removedLegacy ? 'La migrazione ha rimosso lo storico calisthenics incompatibile.' : 'Lo storico palestra compatibile e le vecchie schede restano consultabili.'} Le superserie e gli aggiornamenti PWA non cancellano questo archivio.</p></div></section>
+    <section className="migration card"><ShieldCheck/><div><h3>Schema palestra v7 attivo</h3><p>{removedLegacy ? 'La migrazione ha rimosso lo storico calisthenics incompatibile.' : 'Lo storico palestra compatibile e le vecchie schede restano consultabili.'} Il nuovo programma a tre sedute e gli aggiornamenti PWA non cancellano questo archivio.</p></div></section>
     <section className="offline card"><WifiOff/><div><h3>Dati locali, non sincronizzati</h3><p>I dati restano su questo dispositivo e non si sincronizzano automaticamente con altri telefoni. Cancellare i dati del browser o disinstallare la PWA può eliminarli: esporta periodicamente il backup JSON.</p></div></section>
     <section className="card"><h2>Installazione</h2><p>Android: menu del browser → <b>Installa app</b>. iPhone: Condividi → <b>Aggiungi alla schermata Home</b>.</p></section>
   </>;

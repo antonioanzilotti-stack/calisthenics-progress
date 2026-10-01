@@ -6,30 +6,23 @@ const root=process.cwd();
 const defaults=readFileSync(join(root,'src/data/defaults.ts'),'utf8');
 const store=readFileSync(join(root,'src/storage/store.ts'),'utf8');
 const today=readFileSync(join(root,'src/pages/Today.tsx'),'utf8');
+const nav=readFileSync(join(root,'src/components/Nav.tsx'),'utf8');
+const progress=readFileSync(join(root,'src/pages/Progress.tsx'),'utf8');
 
-const requiredPairs=[
-  ['chest-press','seated-row'],['shoulder-press','lat-machine'],['lateral-cable','pullover-cable'],['triceps-pushdown','curl-cable'],
-  ['leg-press','seated-leg-curl'],['leg-extension','glute-bridge'],['adductor-machine','calf-machine'],['front-plank','dead-bug'],
-  ['lat-machine','incline-chest-press'],['machine-high-row','shoulder-press'],['reverse-pec-deck','pullover-cable'],['curl-cable','overhead-triceps-cable'],
-  ['leg-press','lying-leg-curl'],['leg-extension','abductor-machine'],['glute-kickback-cable','calf-machine'],['front-plank','side-plank'],
-];
-
-for(const [first,second] of requiredPairs){
-  assert(defaults.includes(`row('${first}'`),`Manca ${first}`);
-  assert(defaults.includes(`row('${second}'`),`Manca ${second}`);
-}
+for(const id of ['a','b','c','e'])assert(defaults.includes(`id:'${id}'`),`Scheda ${id.toUpperCase()} mancante`);
+assert(!defaults.includes("id:'d'"),'La quarta seduta di forza non deve essere nel nuovo programma');
+assert(!defaults.includes('supersetPosition'),'Il nuovo programma non deve contenere superserie');
 assert(!/row\([^\n]*barbell|row\([^\n]*bilanciere/i.test(defaults),'Il programma contiene un esercizio obbligatorio con bilanciere');
-assert(!defaults.includes("row('walking-lunge'"),'Walking lunge non deve essere obbligatorio');
-assert(!defaults.includes("row('assisted-split-squat'"),'Split squat assistito deve restare solo un’alternativa');
-assert(defaults.includes("id:'e'"),'La scheda E facoltativa deve restare disponibile');
-assert(store.includes("calisthenics-progress-gym-v6"),'Chiave dati v6 mancante');
-assert(store.includes("'calisthenics-progress-gym-v5'"),'Migrazione v5 mancante');
-assert(today.includes('separatedSupersets'),'Persistenza modalità separata mancante');
-assert(today.includes('finishingSecond'),'Logica timer dopo il secondo esercizio mancante');
-assert(today.includes('Completa giro'),'Comando di completamento giro mancante');
+for(const id of ['chest-press','seated-row','shoulder-press','lat-machine','leg-press','glute-drive-machine','iso-lateral-row-machine','pendulum-squat-machine'])assert(defaults.includes(`row('${id}'`),`Manca ${id}`);
+assert(store.includes('calisthenics-progress-gym-v7'),'Chiave dati v7 mancante');
+assert(store.includes("'calisthenics-progress-gym-v6'"),'Migrazione v6 mancante');
+assert(today.includes('Timer automatico dopo ogni serie'),'Timer serie mancante');
+assert(!today.includes('renderSuperset'),'La UI contiene ancora blocchi superserie');
+assert(!nav.includes('calendar'),'Il calendario è ancora nella navigazione');
+for(const view of ['forza','sedute','conditioning'])assert(progress.includes(`tab==='${view}'`),`Vista progressi ${view} mancante`);
 
-for(const id of ['machine-high-row','seated-leg-curl','lying-leg-curl','glute-bridge','glute-kickback-cable']){
-  for(const pose of [0,1]) assert(existsSync(join(root,`public/illustrations-v3/${id}-${pose}.webp`)),`Illustrazione mancante: ${id}-${pose}`);
+for(const id of ['converging-chest-press','iso-lateral-row-machine','neutral-grip-pulldown','cable-front-raise','pendulum-squat-machine','single-leg-press','glute-drive-machine','kneeling-cable-crunch']){
+  for(const pose of [0,1])assert(existsSync(join(root,`public/illustrations-v3/${id}-${pose}.webp`)),`Illustrazione mancante: ${id}-${pose}`);
 }
 
-console.log('Programma superserie, migrazione, sicurezza e illustrazioni: OK');
+console.log('Tre sedute, conditioning, progressi, migrazione e nuove illustrazioni: OK');

@@ -1,3 +1,3 @@
-import{Activity,CalendarDays,ChartNoAxesCombined,Dumbbell,Settings,Scale}from'lucide-react';
-const items=[['today','Oggi',Activity],['calendar','Calendario',CalendarDays],['progress','Progressi',ChartNoAxesCombined],['body','Corpo',Scale],['exercises','Esercizi',Dumbbell],['settings','Impostazioni',Settings]];
+import{Activity,ChartNoAxesCombined,Dumbbell,Settings,Scale}from'lucide-react';
+const items=[['today','Oggi',Activity],['progress','Progressi',ChartNoAxesCombined],['body','Corpo',Scale],['exercises','Esercizi',Dumbbell],['settings','Impostazioni',Settings]];
 export default function Nav({page,setPage}:{page:string;setPage:(p:string)=>void}){return <nav className="nav" aria-label="Navigazione principale">{items.map(([id,label,Icon])=><button className={page===id?'active':''} onClick={()=>setPage(String(id))} key={String(id)}><Icon size={21}/><span>{String(label)}</span></button>)}</nav>}

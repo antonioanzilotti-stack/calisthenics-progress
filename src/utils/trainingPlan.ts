@@ -1,7 +1,7 @@
 import type {AppData, CalendarStatus, Session, SetLog, Workout, WorkoutExercise, WorkoutId} from '../types';
 
 export type ProgramPhase = 'Adattamento'|'Progressione'|'Consolidamento'|'Mantenimento';
-const strengthSequence: WorkoutId[] = ['a','b','c','d'];
+const strengthSequence: WorkoutId[] = ['a','b','c'];
 const parseDate = (value:string) => new Date(`${value}T12:00:00`);
 const dayDiff = (a:string,b:string) => Math.floor((parseDate(a).getTime()-parseDate(b).getTime())/86400000);
 export const localIso = (date=new Date()) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;

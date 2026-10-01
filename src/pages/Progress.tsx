@@ -1,100 +1,100 @@
-import {useMemo, useState} from 'react';
-import {Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {Award, CalendarX, Footprints, Gauge, Timer, Weight} from 'lucide-react';
+import {useMemo,useState} from 'react';
+import {Bar,BarChart,CartesianGrid,Line,LineChart,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
+import {Activity,Award,Clock3,Dumbbell,Footprints,Gauge,Timer,Weight} from 'lucide-react';
 import {useApp} from '../hooks/useApp';
-import {exerciseLibrary, getExercise} from '../data/exercises';
-import {calendarStatus, exerciseSets, localIso, sessionExerciseId, sessionVolume} from '../utils/trainingPlan';
+import {exerciseLibrary,getExercise} from '../data/exercises';
+import {exerciseSets,localIso,sessionExerciseId,sessionVolume} from '../utils/trainingPlan';
 
-type Period = '30'|'60'|'90'|'180'|'all';
-const periodLabels: Record<Period,string> = {'30':'30 giorni','60':'60 giorni','90':'90 giorni','180':'6 mesi','all':'Tutto'};
+type Period='30'|'60'|'90'|'180'|'all';
+type Tab='forza'|'sedute'|'conditioning';
+type Metric='peso'|'ripetizioni'|'volume';
+type SessionMetric='volume'|'durata';
+const periodLabels:Record<Period,string>={'30':'30 giorni','60':'60 giorni','90':'90 giorni','180':'6 mesi','all':'Tutto'};
+const metricLabels:Record<Metric,string>={peso:'Peso',ripetizioni:'Ripetizioni',volume:'Volume'};
 
-export default function Progress() {
-  const {data} = useApp();
-  const [period, setPeriod] = useState<Period>('60');
-  const strengthExercises = exerciseLibrary(data.customExercises).filter(exercise => exercise.kind === 'strength');
-  const [exerciseId, setExerciseId] = useState(strengthExercises[0].id);
-  const cutoff = useMemo(() => {
-    if (period === 'all') return data.preferences.createdAt;
-    const date = new Date(); date.setDate(date.getDate() - Number(period)); return localIso(date);
-  }, [period, data.preferences.createdAt]);
-  const sessions = useMemo(() => data.sessions.filter(session => session.date >= cutoff && session.date <= localIso()).sort((a,b) => a.date.localeCompare(b.date)), [data.sessions, cutoff]);
+export default function Progress(){
+  const {data}=useApp();
+  const [period,setPeriod]=useState<Period>('60');
+  const [tab,setTab]=useState<Tab>('forza');
+  const [metric,setMetric]=useState<Metric>('peso');
+  const [sessionMetric,setSessionMetric]=useState<SessionMetric>('volume');
+  const strengthExercises=useMemo(()=>exerciseLibrary(data.customExercises).filter(exercise=>exercise.kind==='strength'),[data.customExercises]);
+  const groups=useMemo(()=>['Tutti',...Array.from(new Set(strengthExercises.map(exercise=>exercise.group))).sort()],[strengthExercises]);
+  const [group,setGroup]=useState('Tutti');
+  const filteredExercises=useMemo(()=>strengthExercises.filter(exercise=>group==='Tutti'||exercise.group===group),[strengthExercises,group]);
+  const [exerciseId,setExerciseId]=useState(strengthExercises[0]?.id||'chest-press');
+  const selectedExercise=filteredExercises.some(exercise=>exercise.id===exerciseId)?exerciseId:(filteredExercises[0]?.id||exerciseId);
+  const cutoff=useMemo(()=>{if(period==='all')return '0000-00-00';const date=new Date();date.setDate(date.getDate()-Number(period));return localIso(date)},[period]);
+  const sessions=useMemo(()=>data.sessions.filter(session=>session.date>=cutoff&&session.date<=localIso()).sort((a,b)=>a.date.localeCompare(b.date)),[data.sessions,cutoff]);
+  const recorded=useMemo(()=>sessions.filter(session=>['completato','recuperato','parziale'].includes(session.status)),[sessions]);
 
-  const exerciseHistory = useMemo(() => sessions.flatMap(session => {
-    const sets = exerciseSets(session, exerciseId).filter(set => set.done);
-    if (!sets.length) return [];
-    return [{date: session.date, label: `${session.date.slice(5)} ${new Date(session.startedAt||`${session.date}T12:00`).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}`, peso: Math.max(...sets.map(set => set.weight || 0)),
-      ripetizioni: Math.max(...sets.map(set => set.reps || 0)), volume: sets.reduce((sum,set) => sum + (set.weight || 0) * (set.reps || 0),0)}];
-  }), [sessions, exerciseId]);
+  const exerciseHistory=useMemo(()=>recorded.flatMap(session=>{
+    const sets=exerciseSets(session,selectedExercise).filter(set=>set.done&&!set.warmup);
+    if(!sets.length)return[];
+    return[{date:session.date,label:session.date.slice(5),peso:Math.max(...sets.map(set=>set.weight||0)),ripetizioni:Math.max(...sets.map(set=>set.reps||0)),volume:Math.round(sets.reduce((sum,set)=>sum+(set.weight||0)*(set.reps||0),0))}];
+  }),[recorded,selectedExercise]);
 
-  const adherenceDays = useMemo(() => {
-    const recorded = data.sessions.filter(session => session.date >= cutoff && session.date <= localIso() && session.status !== 'riposo')
-      .map(session => ({date:session.date,status:session.status === 'recuperato' ? 'completato' : session.status}));
-    const pending = Object.entries(data.plannedDates).filter(([date,choice]) => date >= cutoff && date <= localIso() && choice !== 'riposo' && !data.sessions.some(session => session.date === date))
-      .map(([date]) => ({date,status:calendarStatus(date,data)}));
-    return [...recorded,...pending].sort((a,b)=>a.date.localeCompare(b.date));
-  }, [cutoff, data]);
+  const summary=useMemo(()=>{
+    const conditioning=recorded.flatMap(session=>session.conditioning).filter(item=>item.done);
+    const completed=recorded.filter(session=>['completato','recuperato'].includes(session.status)).length;
+    const strength=recorded.filter(session=>session.workoutId!=='e').length;
+    const volume=Math.round(recorded.reduce((sum,session)=>sum+sessionVolume(session),0));
+    const minutes=recorded.reduce((sum,session)=>sum+session.duration,0);
+    const average=recorded.length?Math.round(minutes/recorded.length):0;
+    const conditioningMinutes=conditioning.reduce((sum,item)=>sum+(item.minutes||0),0);
+    return{completed,strength,volume,minutes,average,conditioningMinutes};
+  },[recorded]);
 
-  const summary = useMemo(() => {
-    const completed = sessions.filter(session => ['completato','recuperato'].includes(session.status)).length;
-    const skipped = adherenceDays.filter(day => day.status === 'saltato').length;
-    const scheduled = adherenceDays.length;
-    const conditioning = sessions.flatMap(session => session.conditioning).filter(item => item.done);
-    const minutesBy = (names: string[]) => conditioning.filter(item => names.includes(item.activity)).reduce((sum,item) => sum + (item.minutes || 0),0);
-    const lastDone = [...sessions].reverse().find(session => ['completato','recuperato','parziale'].includes(session.status));
-    const daysWithout = lastDone ? Math.max(0,Math.floor((new Date(`${localIso()}T12:00:00`).getTime()-new Date(`${lastDone.date}T12:00:00`).getTime())/86400000)) : null;
-    return {completed, skipped, scheduled, adherence: scheduled ? Math.round(completed/scheduled*100) : null,
-      minutes: sessions.reduce((sum,session)=>sum+session.duration,0), volume: Math.round(sessions.reduce((sum,session)=>sum+sessionVolume(session),0)),
-      recovered:sessions.filter(session=>session.status==='recuperato').length, daysWithout,
-      conditioning:conditioning.reduce((sum,item)=>sum+(item.minutes||0),0), walk:minutesBy(['Camminata','Camminata inclinata']),
-      rower:minutesBy(['Vogatore']), boxing:minutesBy(['Boxe']), rope:minutesBy(['Corda'])};
-  }, [sessions, adherenceDays]);
+  const trends=useMemo(()=>recorded.map(session=>({date:session.date.slice(5),nome:session.workoutShort||session.workoutId.toUpperCase(),volume:Math.round(sessionVolume(session)),durata:session.duration})).filter(row=>row.volume||row.durata),[recorded]);
+  const groupVolumes=useMemo(()=>{
+    const totals:Record<string,number>={};
+    recorded.forEach(session=>Object.entries(session.logs).forEach(([key,sets])=>{const exercise=getExercise(sessionExerciseId(session,key),data.customExercises);if(!exercise)return;totals[exercise.group]=(totals[exercise.group]||0)+sets.filter(set=>set.done&&!set.warmup).reduce((sum,set)=>sum+(set.weight||0)*(set.reps||0),0)}));
+    return Object.entries(totals).map(([gruppo,volume])=>({gruppo,volume:Math.round(volume)})).filter(row=>row.volume).sort((a,b)=>b.volume-a.volume);
+  },[recorded,data.customExercises]);
+  const conditioningByActivity=useMemo(()=>{
+    const totals:Record<string,number>={};
+    recorded.flatMap(session=>session.conditioning).filter(item=>item.done).forEach(item=>{totals[item.activity]=(totals[item.activity]||0)+(item.minutes||0)});
+    return Object.entries(totals).map(([attivita,minuti])=>({attivita,minuti})).sort((a,b)=>b.minuti-a.minuti);
+  },[recorded]);
 
-  const trends = useMemo(() => sessions.map(session => ({date:session.date.slice(5),volume:Math.round(sessionVolume(session)),durata:session.duration})).filter(item=>item.volume||item.durata),[sessions]);
-  const groupVolumes = useMemo(() => {
-    const totals: Record<string,number> = {};
-    sessions.forEach(session => Object.entries(session.logs).forEach(([id,sets]) => {
-      const group = getExercise(sessionExerciseId(session,id),data.customExercises)?.group || 'Altro';
-      totals[group] = (totals[group] || 0) + sets.filter(set=>set.done).reduce((sum,set)=>sum+(set.weight||0)*(set.reps||0),0);
-    }));
-    return Object.entries(totals).map(([gruppo,volume])=>({gruppo,volume:Math.round(volume)})).filter(item=>item.volume);
-  },[sessions,data.customExercises]);
-
-  const adherenceTrend = useMemo(() => {
-    const buckets: Record<string,{label:string;completed:number;decided:number;missed:number;monthly:string}> = {};
-    adherenceDays.forEach(day => {
-      const date = new Date(`${day.date}T12:00:00`); const monday = new Date(date); monday.setDate(date.getDate()-((date.getDay()+6)%7));
-      const key=localIso(monday); const bucket=buckets[key] ||= {label:key.slice(5),completed:0,decided:0,missed:0,monthly:day.date.slice(0,7)};
-      bucket.decided++; if(day.status==='completato') bucket.completed++; if(day.status==='saltato') bucket.missed++;
-    });
-    return Object.values(buckets).map(bucket=>({...bucket,aderenza:bucket.decided?Math.round(bucket.completed/bucket.decided*100):0}));
-  },[adherenceDays]);
-
-  const monthly = useMemo(() => {
-    const map:Record<string,{mese:string;done:number;decided:number;missed:number}>={}; adherenceDays.forEach(day=>{const key=day.date.slice(0,7);const row=map[key]||={mese:key.slice(5),done:0,decided:0,missed:0};row.decided++;if(day.status==='completato')row.done++;if(day.status==='saltato')row.missed++});
-    return Object.values(map).map(row=>({...row,aderenza:row.decided?Math.round(row.done/row.decided*100):0}));
-  },[adherenceDays]);
-
-  const conditioningChart = [{attivita:'Conditioning',minuti:summary.conditioning},{attivita:'Camminata',minuti:summary.walk},{attivita:'Vogatore',minuti:summary.rower},{attivita:'Boxe',minuti:summary.boxing},{attivita:'Corda',minuti:summary.rope}];
-  const best = [...exerciseHistory].sort((a,b)=>b.volume-a.volume)[0];
-  const maxWeight = exerciseHistory.length ? Math.max(...exerciseHistory.map(item=>item.peso)) : null;
-  const maxReps = exerciseHistory.length ? Math.max(...exerciseHistory.map(item=>item.ripetizioni)) : null;
-  const maxVolume = exerciseHistory.length ? Math.max(...exerciseHistory.map(item=>item.volume)) : null;
-  const hasData = sessions.length > 0;
+  const maxWeight=exerciseHistory.length?Math.max(...exerciseHistory.map(row=>row.peso)):0;
+  const maxReps=exerciseHistory.length?Math.max(...exerciseHistory.map(row=>row.ripetizioni)):0;
+  const maxVolume=exerciseHistory.length?Math.max(...exerciseHistory.map(row=>row.volume)):0;
+  const best=[...exerciseHistory].sort((a,b)=>b.volume-a.volume)[0];
+  const chartUnit=metric==='peso'?'kg':metric==='ripetizioni'?'rip.':'kg';
 
   return <>
-    <header><span className="eyebrow">Solo dati realmente registrati</span><h1>Progressi</h1><div className="filter-row"><label>Periodo<select value={period} onChange={event=>setPeriod(event.target.value as Period)}>{Object.entries(periodLabels).map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label><label>Esercizio<select value={exerciseId} onChange={event=>setExerciseId(event.target.value)}>{strengthExercises.map(exercise=><option value={exercise.id} key={exercise.id}>{exercise.name}</option>)}</select></label></div></header>
-    <div className="stats stats-seven"><article><b>{summary.adherence===null?'—':`${summary.adherence}%`}</b><span>Aderenza sulle scelte</span></article><article><b>{summary.scheduled||'—'}</b><span>Allenamenti scelti</span></article><article><b>{summary.completed||'—'}</b><span>Completati</span></article><article><b>{summary.skipped||'—'}</b><span>Saltati</span></article><article><b>{summary.minutes||'—'}</b><span>Minuti</span></article><article><b>{summary.volume?`${summary.volume} kg`:'—'}</b><span>Volume</span></article><article><b>{summary.daysWithout??'—'}</b><span>Giorni senza allenamento</span></article></div>
-    {!hasData && <p className="empty card">Nessun dato registrato.</p>}
-    <section className="records"><div className="section-title"><h2>Record personali · {getExercise(exerciseId,data.customExercises).name}</h2><span>Nessun valore fittizio</span></div><div className="record-grid"><article className="card"><Weight/><small>Peso massimo</small><b>{maxWeight ? `${maxWeight} kg` : '—'}</b></article><article className="card"><Gauge/><small>Più ripetizioni</small><b>{maxReps || '—'}</b></article><article className="card"><Award/><small>Volume massimo</small><b>{maxVolume ? `${maxVolume} kg` : '—'}</b></article><article className="card"><CalendarX/><small>Miglior sessione</small><b>{best ? best.date : '—'}</b></article></div></section>
-    <section className="card chart"><h2>Peso utilizzato · {getExercise(exerciseId,data.customExercises).name}</h2>{exerciseHistory.length?<ResponsiveContainer width="100%" height={210}><LineChart data={exerciseHistory}><CartesianGrid strokeDasharray="4 4"/><XAxis dataKey="label"/><YAxis/><Tooltip/><Line dataKey="peso" name="kg" stroke="var(--accent)" strokeWidth={3}/></LineChart></ResponsiveContainer>:<p className="empty">Nessun dato registrato.</p>}</section>
-    <section className="card chart"><h2>Ripetizioni per esercizio</h2>{exerciseHistory.length?<ResponsiveContainer width="100%" height={190}><LineChart data={exerciseHistory}><XAxis dataKey="label"/><YAxis allowDecimals={false}/><Tooltip/><Line dataKey="ripetizioni" stroke="#6391ec" strokeWidth={3}/></LineChart></ResponsiveContainer>:<p className="empty">Nessun dato registrato.</p>}</section>
-    <section className="card chart"><h2>Volume per sessione</h2>{trends.length?<ResponsiveContainer width="100%" height={210}><BarChart data={trends}><XAxis dataKey="date"/><YAxis/><Tooltip/><Bar dataKey="volume" fill="var(--accent)" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>:<p className="empty">Nessun dato registrato.</p>}</section>
-    <section className="card chart"><h2>Volume per gruppo muscolare</h2>{groupVolumes.length?<ResponsiveContainer width="100%" height={230}><BarChart data={groupVolumes} layout="vertical"><XAxis type="number"/><YAxis type="category" dataKey="gruppo" width={95}/><Tooltip/><Bar dataKey="volume" fill="#6391ec" radius={[0,6,6,0]}/></BarChart></ResponsiveContainer>:<p className="empty">Nessun dato registrato.</p>}</section>
-    <section className="card chart"><h2>Durata allenamenti</h2>{trends.length?<ResponsiveContainer width="100%" height={190}><LineChart data={trends}><XAxis dataKey="date"/><YAxis/><Tooltip/><Line dataKey="durata" name="minuti" stroke="var(--amber)" strokeWidth={3}/></LineChart></ResponsiveContainer>:<p className="empty">Nessun dato registrato.</p>}</section>
-    <section className="card chart"><h2>Aderenza settimanale</h2>{adherenceTrend.length?<ResponsiveContainer width="100%" height={210}><BarChart data={adherenceTrend}><XAxis dataKey="label"/><YAxis domain={[0,100]}/><Tooltip/><Bar dataKey="aderenza" fill="var(--accent)" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>:<p className="empty">Nessun dato registrato.</p>}</section>
-    <section className="card chart"><h2>Aderenza mensile</h2>{monthly.length?<ResponsiveContainer width="100%" height={190}><BarChart data={monthly}><XAxis dataKey="mese"/><YAxis domain={[0,100]}/><Tooltip/><Bar dataKey="aderenza" fill="#6391ec" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>:<p className="empty">Nessun dato registrato.</p>}</section>
-    <section className="card chart"><h2>Conditioning per attività</h2><div className="conditioning-totals"><span><Timer/> {summary.conditioning} min conditioning</span><span><Footprints/> {summary.walk} min camminata</span></div>{summary.conditioning?<ResponsiveContainer width="100%" height={210}><BarChart data={conditioningChart}><XAxis dataKey="attivita"/><YAxis/><Tooltip/><Bar dataKey="minuti" fill="var(--accent)" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>:<p className="empty">Nessun dato registrato.</p>}</section>
-    <section className="card exercise-table"><h2>Progressione · {getExercise(exerciseId,data.customExercises).name}</h2>{exerciseHistory.length?<div className="table-scroll"><table><thead><tr><th>Data</th><th>Peso</th><th>Ripetizioni</th><th>Volume</th></tr></thead><tbody>{exerciseHistory.map((row,index)=><tr key={`${row.date}-${index}`}><td>{row.date}</td><td>{row.peso||'—'} kg</td><td>{row.ripetizioni||'—'}</td><td>{row.volume||'—'} kg</td></tr>)}</tbody></table></div>:<p className="empty">Nessun dato registrato.</p>}</section>
-    <section className="missed-summary card"><h2>Costanza</h2><p><b>{summary.scheduled}</b> scelti · <b>{summary.completed}</b> completati · <b>{summary.skipped}</b> saltati · <b>{summary.recovered}</b> recuperati · i giorni neutri non entrano nel calcolo</p></section>
+    <header><span className="eyebrow">Dati reali, facili da leggere</span><h1>Progressi</h1><p className="lede">Esplora forza, andamento delle sedute e conditioning. Tocca i filtri e i grafici per concentrarti su ciò che vuoi migliorare.</p><div className="filter-row"><label>Periodo<select value={period} onChange={event=>setPeriod(event.target.value as Period)}>{Object.entries(periodLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div></header>
+
+    <section className="progress-overview">
+      <article><Dumbbell/><b>{summary.completed||'—'}</b><span>Sedute completate</span></article>
+      <article><Timer/><b>{summary.minutes||'—'}</b><span>Minuti totali</span></article>
+      <article><Weight/><b>{summary.volume?`${summary.volume} kg`:'—'}</b><span>Volume sollevato</span></article>
+      <article><Clock3/><b>{summary.average||'—'}</b><span>Minuti medi</span></article>
+    </section>
+
+    <nav className="progress-tabs" aria-label="Sezioni progressi">
+      <button className={tab==='forza'?'active':''} onClick={()=>setTab('forza')}><Gauge/> Forza</button>
+      <button className={tab==='sedute'?'active':''} onClick={()=>setTab('sedute')}><Activity/> Sedute</button>
+      <button className={tab==='conditioning'?'active':''} onClick={()=>setTab('conditioning')}><Footprints/> Conditioning</button>
+    </nav>
+
+    {tab==='forza'&&<>
+      <section className="card progress-controls"><label>Gruppo muscolare<select value={group} onChange={event=>{setGroup(event.target.value);const first=strengthExercises.find(exercise=>event.target.value==='Tutti'||exercise.group===event.target.value);if(first)setExerciseId(first.id)}}>{groups.map(value=><option key={value}>{value}</option>)}</select></label><label>Esercizio<select value={selectedExercise} onChange={event=>setExerciseId(event.target.value)}>{filteredExercises.map(exercise=><option value={exercise.id} key={exercise.id}>{exercise.name}</option>)}</select></label></section>
+      <section className="record-grid"><article className="card"><Weight/><small>Peso massimo</small><b>{maxWeight?`${maxWeight} kg`:'—'}</b></article><article className="card"><Gauge/><small>Più ripetizioni</small><b>{maxReps||'—'}</b></article><article className="card"><Award/><small>Volume migliore</small><b>{maxVolume?`${maxVolume} kg`:'—'}</b></article><article className="card"><Activity/><small>Data migliore</small><b>{best?.date||'—'}</b></article></section>
+      <section className="card chart interactive-chart"><div className="chart-head"><div><span className="eyebrow">Andamento esercizio</span><h2>{getExercise(selectedExercise,data.customExercises)?.name}</h2></div><div className="metric-toggle">{(Object.keys(metricLabels) as Metric[]).map(value=><button key={value} className={metric===value?'active':''} onClick={()=>setMetric(value)}>{metricLabels[value]}</button>)}</div></div>{exerciseHistory.length?<ResponsiveContainer width="100%" height={260}><LineChart data={exerciseHistory} margin={{top:12,right:12,left:-12,bottom:0}}><CartesianGrid strokeDasharray="4 4"/><XAxis dataKey="label"/><YAxis/><Tooltip formatter={(value)=>[`${value} ${chartUnit}`,metricLabels[metric]]} labelFormatter={(label)=>`Data ${label}`}/><Line type="monotone" dataKey={metric} stroke="var(--accent)" strokeWidth={4} dot={{r:5}} activeDot={{r:8}}/></LineChart></ResponsiveContainer>:<p className="empty">Registra le serie di questo esercizio per vedere la progressione.</p>}</section>
+      <section className="card exercise-table"><div className="section-title"><h2>Storico dettagliato</h2><span>{exerciseHistory.length} rilevazioni</span></div>{exerciseHistory.length?<div className="table-scroll"><table><thead><tr><th>Data</th><th>Peso</th><th>Ripetizioni</th><th>Volume</th></tr></thead><tbody>{[...exerciseHistory].reverse().map((row,index)=><tr key={`${row.date}-${index}`}><td>{row.date}</td><td>{row.peso?`${row.peso} kg`:'—'}</td><td>{row.ripetizioni||'—'}</td><td>{row.volume?`${row.volume} kg`:'—'}</td></tr>)}</tbody></table></div>:<p className="empty">Nessun dato registrato.</p>}</section>
+    </>}
+
+    {tab==='sedute'&&<>
+      <section className="card chart interactive-chart"><div className="chart-head"><div><span className="eyebrow">Andamento generale</span><h2>{sessionMetric==='volume'?'Volume per seduta':'Durata per seduta'}</h2></div><div className="metric-toggle"><button className={sessionMetric==='volume'?'active':''} onClick={()=>setSessionMetric('volume')}>Volume</button><button className={sessionMetric==='durata'?'active':''} onClick={()=>setSessionMetric('durata')}>Durata</button></div></div>{trends.length?<ResponsiveContainer width="100%" height={270}><BarChart data={trends} margin={{top:12,right:12,left:-12,bottom:0}}><CartesianGrid strokeDasharray="4 4"/><XAxis dataKey="date"/><YAxis/><Tooltip formatter={(value)=>[`${value} ${sessionMetric==='volume'?'kg':'min'}`,sessionMetric==='volume'?'Volume':'Durata']}/><Bar dataKey={sessionMetric} fill="var(--accent)" radius={[8,8,0,0]}/></BarChart></ResponsiveContainer>:<p className="empty">Nessuna seduta registrata nel periodo.</p>}</section>
+      <section className="card chart"><div className="section-title"><h2>Volume per gruppo muscolare</h2><span>{summary.strength} sedute forza</span></div>{groupVolumes.length?<ResponsiveContainer width="100%" height={Math.max(240,groupVolumes.length*42)}><BarChart data={groupVolumes} layout="vertical" margin={{left:12,right:18}}><XAxis type="number"/><YAxis type="category" dataKey="gruppo" width={105}/><Tooltip formatter={(value)=>[`${value} kg`,'Volume']}/><Bar dataKey="volume" fill="#6391ec" radius={[0,8,8,0]}/></BarChart></ResponsiveContainer>:<p className="empty">Nessun volume registrato.</p>}</section>
+      <section className="card recent-sessions"><div className="section-title"><h2>Ultime sedute</h2><span>{recorded.length}</span></div>{recorded.length?[...recorded].reverse().slice(0,8).map(session=><article key={session.id}><b>{session.workoutShort||session.workoutId.toUpperCase()} · {session.workoutName}</b><span>{session.date} · {session.duration} min · {Math.round(sessionVolume(session))} kg</span><span className={`pill ${session.status}`}>{session.status}</span></article>):<p className="empty">Nessuna seduta registrata.</p>}</section>
+    </>}
+
+    {tab==='conditioning'&&<>
+      <section className="conditioning-summary"><article className="card"><Timer/><small>Minuti totali</small><b>{summary.conditioningMinutes||'—'}</b></article><article className="card"><Footprints/><small>Attività diverse</small><b>{conditioningByActivity.length||'—'}</b></article></section>
+      <section className="card chart interactive-chart"><div className="section-title"><h2>Minuti per attività</h2><span>Solo attività completate</span></div>{conditioningByActivity.length?<ResponsiveContainer width="100%" height={270}><BarChart data={conditioningByActivity} margin={{top:12,right:12,left:-12,bottom:0}}><CartesianGrid strokeDasharray="4 4"/><XAxis dataKey="attivita"/><YAxis/><Tooltip formatter={(value)=>[`${value} min`,'Tempo']}/><Bar dataKey="minuti" fill="var(--accent)" radius={[8,8,0,0]}/></BarChart></ResponsiveContainer>:<p className="empty">Completa una sessione E per vedere qui il conditioning.</p>}</section>
+    </>}
   </>;
 }

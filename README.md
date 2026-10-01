@@ -4,26 +4,23 @@ PWA mobile-first in italiano per recupero della forma, forza, definizione, dimag
 
 ## Programma
 
-- A — Upper Body 1
-- B — Lower Body 1
-- C — Upper Body 2
-- D — Lower Body 2
+- A — Upper Body completo
+- B — Lower Body + Core
+- C — Full Body
 - E — Conditioning opzionale
 
-Non esiste un calendario settimanale rigido: il suggerimento di forza segue A → B → C → D usando solo l’ultimo allenamento di forza realmente completato. E resta sempre opzionale e non interrompe la rotazione. Le quattro schede di forza hanno quattro blocchi A1+A2, B1+B2, C1+C2 e D1+D2 con 15 secondi di transizione e recupero dopo il secondo esercizio. La doppia progressione viene proposta solo quando entrambi gli esercizi del blocco raggiungono il limite alto con RIR adeguato; il carico non viene mai modificato automaticamente.
+Il suggerimento di forza segue A → B → C usando solo l’ultimo allenamento di forza realmente completato. E resta sempre opzionale e non interrompe la rotazione. Ogni seduta base comprende sei esercizi di lavoro eseguiti singolarmente ed è calibrata per consentire l’aggiunta manuale di uno o due esercizi. Il carico non viene mai modificato automaticamente.
 
 ## Funzioni principali
 
 - peso, ripetizioni, completamento, RIR e note per ogni serie;
-- pulsante Completa giro, indicatore del giro, ordine A1/A2 scambiabile e modalità separata per macchina occupata;
-- timer di recupero 30/45/60/75/90/120 secondi, con avvio automatico dopo il secondo esercizio della coppia;
-- sessioni avviabili, persistenti, pausabili, terminabili, saltate o spostate, anche più volte nello stesso giorno;
+- timer di recupero 30/45/60/75/90/120 secondi, con avvio automatico dopo ogni serie;
+- sessioni avviabili, persistenti, pausabili, terminabili o saltate, anche più volte nello stesso giorno;
 - esercizi aggiungibili, sostituibili, riordinabili o rimovibili durante una sessione, senza perdere i dati già inseriti;
 - serie di riscaldamento e di lavoro aggiungibili o rimovibili;
 - conditioning opzionale con Camminata, Camminata inclinata, Vogatore, Corda e Boxe; nessuna corsa, ellittica o stair climber;
-- calendario dinamico con stati selezionato, in corso, completato, parziale, saltato, riposo e giorno neutro, più modifica dello storico;
-- libreria di oltre 60 esercizi con filtri, istruzioni e creazione di esercizi personali con immagine facoltativa;
-- grafici di carichi, ripetizioni, volume, gruppi muscolari, aderenza, durata e conditioning;
+- libreria di oltre 65 esercizi con filtri, istruzioni, sostituzioni pertinenti e creazione di esercizi personali con immagine facoltativa;
+- Progressi interattivi con viste Forza, Sedute e Conditioning, filtri per periodo, gruppo ed esercizio;
 - peso corporeo e misure opzionali separati dai carichi delle macchine;
 - backup JSON, import JSON compatibile ed export CSV completo;
 - tema chiaro/scuro e PWA offline.
@@ -46,7 +43,7 @@ npm run preview
 
 ## Migrazione e persistenza
 
-Il nuovo schema usa la chiave `calisthenics-progress-gym-v6`. Alla prima apertura migra automaticamente i dati palestra v3, v4 e v5 compatibili, conservando sessioni, carichi, misure corporee, esercizi personali, calendario e preferenze. Le vecchie sessioni restano leggibili anche quando non contengono blocchi di superserie.
+Il nuovo schema usa la chiave `calisthenics-progress-gym-v7`. Alla prima apertura migra automaticamente i dati palestra v3, v4, v5 e v6 compatibili, conservando sessioni, carichi, misure corporee, esercizi personali e preferenze. Le vecchie sessioni restano leggibili.
 
 Le operazioni in Impostazioni sono distinte:
 
@@ -66,12 +63,12 @@ Il progetto è già collegato a GitHub e Vercel. Vercel deve usare preset Vite, 
 
 ```text
 src/components/   navigazione, illustrazioni e schede tecniche
-src/data/         esercizi e programmi A/B/C/D/E
+src/data/         esercizi e programmi A/B/C/E
 src/hooks/        stato condiviso e persistenza
-src/pages/        Oggi, Calendario, Progressi, Corpo, Esercizi, Impostazioni
+src/pages/        Oggi, Progressi, Corpo, Esercizi, Impostazioni
 src/storage/      migrazione, localStorage, import/export
-src/types/        schema dati TypeScript v6
-src/utils/        fasi, pianificazione, aderenza e volume
+src/types/        schema dati TypeScript v7
+src/utils/        fasi, sequenza, progressione e volume
 vite.config.ts    manifest e service worker PWA
 ```
 

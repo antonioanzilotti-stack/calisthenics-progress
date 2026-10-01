@@ -137,7 +137,7 @@ export type Preferences = {
 };
 
 export type AppData = {
-  schemaVersion: 6;
+  schemaVersion: 7;
   sessions: Session[];
   workouts: Workout[];
   schedule: Partial<Record<number, Workout['id']>>;
