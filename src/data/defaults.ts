@@ -3,41 +3,48 @@ import type {AppData, ConditioningActivity, ConditioningLog, SetLog, Workout, Wo
 const localIso = (date = new Date()) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-const row = (exerciseId: string, sets: number, reps: string | undefined, seconds: string | undefined, rest: number, superset?: string): WorkoutExercise =>
-  ({exerciseId, sets, reps, seconds, rest, superset});
+const row = (exerciseId: string, sets: number, reps: string | undefined, seconds: string | undefined, rest: number, superset?: string, supersetPosition?: 1 | 2): WorkoutExercise =>
+  ({exerciseId, sets, reps, seconds, rest, superset, supersetPosition, transition:superset ? 15 : undefined});
 
 export const workouts: Workout[] = [
   {
     id:'a', short:'A', name:'Upper Body 1', duration:'55–65 min', focus:'Petto e schiena in equilibrio, spalle e braccia',
     exercises:[
-      row('bike',1,undefined,'300',0), row('chest-press',3,'10–12',undefined,90,'Superserie opzionale 1'),
-      row('seated-row',3,'10–12',undefined,90,'Superserie opzionale 1'), row('shoulder-press',3,'10–12',undefined,90,'Superserie opzionale 2'),
-      row('lat-machine',3,'10–12',undefined,90,'Superserie opzionale 2'), row('lateral-cable',2,'12–15',undefined,60),
-      row('pullover-cable',2,'12–15',undefined,75), row('triceps-pushdown',2,'10–12',undefined,75), row('curl-cable',2,'10–12',undefined,75),
+      row('bike',1,undefined,'300',0),
+      row('chest-press',3,'10–12',undefined,90,'A',1), row('seated-row',3,'10–12',undefined,90,'A',2),
+      row('shoulder-press',3,'10–12',undefined,90,'B',1), row('lat-machine',3,'10–12',undefined,90,'B',2),
+      row('lateral-cable',2,'12–15',undefined,75,'C',1), row('pullover-cable',2,'12–15',undefined,75,'C',2),
+      row('triceps-pushdown',2,'10–12',undefined,75,'D',1), row('curl-cable',2,'10–12',undefined,75,'D',2),
     ],
   },
   {
     id:'b', short:'B', name:'Lower Body 1', duration:'45–55 min', focus:'Quadricipiti, femorali, adduttori e core',
     exercises:[
-      row('bike',1,undefined,'300',0), row('leg-press',3,'10–12',undefined,120), row('leg-curl',3,'10–12',undefined,90),
-      row('leg-extension',3,'12–15',undefined,90), row('walking-lunge',2,'10/gamba',undefined,90),
-      row('adductor-machine',2,'12–15',undefined,75), row('front-plank',3,undefined,'30–45',60),
+      row('bike',1,undefined,'300',0),
+      row('leg-press',3,'10–12',undefined,120,'A',1), row('seated-leg-curl',3,'10–12',undefined,120,'A',2),
+      row('leg-extension',3,'12–15',undefined,90,'B',1), row('glute-bridge',3,'12–15',undefined,90,'B',2),
+      row('adductor-machine',2,'12–15',undefined,75,'C',1), row('calf-machine',2,'12–15',undefined,75,'C',2),
+      row('front-plank',3,undefined,'30–45',60,'D',1), row('dead-bug',3,'8–10/lato',undefined,60,'D',2),
     ],
   },
   {
     id:'c', short:'C', name:'Upper Body 2', duration:'50–60 min', focus:'Dorso, petto alto, spalle posteriori e braccia',
     exercises:[
-      row('rower',1,undefined,'300',0), row('lat-machine',3,'10–12',undefined,90), row('incline-chest-press',3,'10–12',undefined,90),
-      row('seated-row',3,'10–12',undefined,90), row('shoulder-press',2,'10–12',undefined,90), row('reverse-pec-deck',3,'12–15',undefined,75),
-      row('pullover-cable',2,'12–15',undefined,75), row('curl-cable',2,'10–12',undefined,75), row('overhead-triceps-cable',2,'10–12',undefined,75),
+      row('rower',1,undefined,'300',0),
+      row('lat-machine',3,'10–12',undefined,90,'A',1), row('incline-chest-press',3,'10–12',undefined,90,'A',2),
+      row('machine-high-row',3,'10–12',undefined,90,'B',1), row('shoulder-press',3,'10–12',undefined,90,'B',2),
+      row('reverse-pec-deck',3,'12–15',undefined,75,'C',1), row('pullover-cable',3,'12–15',undefined,75,'C',2),
+      row('curl-cable',2,'10–12',undefined,75,'D',1), row('overhead-triceps-cable',2,'10–12',undefined,75,'D',2),
     ],
   },
   {
     id:'d', short:'D', name:'Lower Body 2', duration:'45–55 min', focus:'Gambe, anche e stabilità del core',
     exercises:[
-      row('bike',1,undefined,'300',0), row('leg-press',3,'10–12',undefined,120), row('leg-curl',3,'10–12',undefined,90),
-      row('leg-extension',2,'12–15',undefined,90), row('assisted-split-squat',2,'8–10/gamba',undefined,90),
-      row('abductor-machine',2,'12–15',undefined,75), row('front-plank',3,undefined,'30',60), row('side-plank',2,undefined,'30/lato',60),
+      row('bike',1,undefined,'300',0),
+      row('leg-press',3,'10–12',undefined,120,'A',1), row('lying-leg-curl',3,'10–12',undefined,120,'A',2),
+      row('leg-extension',3,'12–15',undefined,90,'B',1), row('abductor-machine',3,'12–15',undefined,90,'B',2),
+      row('glute-kickback-cable',2,'12–15/gamba',undefined,75,'C',1), row('calf-machine',2,'12–15',undefined,75,'C',2),
+      row('front-plank',3,undefined,'30',60,'D',1), row('side-plank',3,undefined,'30/lato',60,'D',2),
     ],
   },
   {
@@ -66,6 +73,6 @@ export function defaultConditioning(): ConditioningLog[] {
 
 export function initialData(): AppData {
   const today = localIso();
-  return {schemaVersion:5,sessions:[],workouts,schedule:{},plannedDates:{},preferredSubstitutions:{},customExercises:[],bodyRecords:[],activeSession:null,
+  return {schemaVersion:6,sessions:[],workouts,schedule:{},plannedDates:{},preferredSubstitutions:{},customExercises:[],bodyRecords:[],activeSession:null,
     preferences:{theme:'light',rest:75,autoRest:true,unit:'metrico',createdAt:today,programStartedAt:today}};
 }

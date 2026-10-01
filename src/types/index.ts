@@ -69,6 +69,8 @@ export type WorkoutExercise = {
   seconds?: string;
   rest: number;
   superset?: string;
+  supersetPosition?: 1 | 2;
+  transition?: number;
 };
 
 export type Workout = {
@@ -110,6 +112,7 @@ export type ActiveSession = {
   logs: Record<string, SetLog[]>;
   conditioning: ConditioningLog[];
   exercises: WorkoutExercise[];
+  separatedSupersets: string[];
   notes: string;
   rpe: number | null;
 };
@@ -134,7 +137,7 @@ export type Preferences = {
 };
 
 export type AppData = {
-  schemaVersion: 5;
+  schemaVersion: 6;
   sessions: Session[];
   workouts: Workout[];
   schedule: Partial<Record<number, Workout['id']>>;

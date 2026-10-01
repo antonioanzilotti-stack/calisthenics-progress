@@ -1,9 +1,9 @@
 import type {ActiveSession, AppData, Exercise, Session, Workout, WorkoutExercise, WorkoutId} from '../types';
 import {initialData, workouts} from '../data/defaults';
 
-export const STORAGE_KEY = 'calisthenics-progress-gym-v5';
+export const STORAGE_KEY = 'calisthenics-progress-gym-v6';
 export const MIGRATION_KEY = 'calisthenics-progress-migration';
-const PREVIOUS_KEYS = ['calisthenics-progress-gym-v4','calisthenics-progress-gym-v3'];
+const PREVIOUS_KEYS = ['calisthenics-progress-gym-v5','calisthenics-progress-gym-v4','calisthenics-progress-gym-v3'];
 const LEGACY_KEYS = ['calisthenics-progress','calisthenics-progress-v1','calisthenics-progress-v2'];
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
@@ -11,7 +11,7 @@ const isWorkoutId = (value: unknown): value is WorkoutId => ['a','b','c','d','e'
 const asNumber = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 
 export function isCompatibleBackup(value: unknown) {
-  return isObject(value) && [3,4,5].includes(Number(value.schemaVersion)) && Array.isArray(value.sessions)
+  return isObject(value) && [3,4,5,6].includes(Number(value.schemaVersion)) && Array.isArray(value.sessions)
     && Array.isArray(value.bodyRecords) && Array.isArray(value.workouts) && isObject(value.preferences);
 }
 
@@ -77,6 +77,7 @@ function normalizeActive(raw: Record<string, unknown>, rawWorkouts: Workout[], l
   const logs = isObject(source.logs) ? source.logs : {};
   const rows = Array.isArray(source.exercises) && source.exercises.length ? source.exercises : oldWorkout?.exercises || currentWorkout?.exercises || [];
   return {...source,id:source.id || crypto.randomUUID(),workoutId,exercises:normalizeExerciseRows(rows,logs),logs,
+    separatedSupersets:Array.isArray(source.separatedSupersets) ? source.separatedSupersets : [],
     conditioning:Array.isArray(source.conditioning)?source.conditioning:[],notes:source.notes || '',rpe:source.rpe ?? null};
 }
 
@@ -89,8 +90,8 @@ function normalize(value: unknown): AppData {
   const preferences = isObject(value.preferences) ? value.preferences as unknown as AppData['preferences'] : fallback.preferences;
   return {
     ...fallback,
-    schemaVersion:5,
-    workouts:legacy ? workouts : rawWorkouts.length ? rawWorkouts : workouts,
+    schemaVersion:6,
+    workouts:version < 6 ? workouts : rawWorkouts.length ? rawWorkouts : workouts,
     sessions:normalizeSessions(value,rawWorkouts,legacy),
     bodyRecords:Array.isArray(value.bodyRecords) ? value.bodyRecords as AppData['bodyRecords'] : [],
     plannedDates:normalizePlans(value.plannedDates,legacy,rawWorkouts),
@@ -114,13 +115,13 @@ export function load(): AppData {
       if (isCompatibleBackup(previous)) {
         const migrated = normalize(previous);
         localStorage.setItem(STORAGE_KEY,JSON.stringify(migrated));
-        localStorage.setItem(MIGRATION_KEY,JSON.stringify({to:5,migratedAt:new Date().toISOString(),action:'gym-history-preserved'}));
+        localStorage.setItem(MIGRATION_KEY,JSON.stringify({to:6,migratedAt:new Date().toISOString(),action:'supersets-added-history-preserved'}));
         return migrated;
       }
     }
     const hadLegacyData = LEGACY_KEYS.some(key => localStorage.getItem(key) !== null);
     LEGACY_KEYS.forEach(key => localStorage.removeItem(key));
-    localStorage.setItem(MIGRATION_KEY,JSON.stringify({to:5,migratedAt:new Date().toISOString(),action:hadLegacyData?'legacy-data-removed':'fresh-install'}));
+    localStorage.setItem(MIGRATION_KEY,JSON.stringify({to:6,migratedAt:new Date().toISOString(),action:hadLegacyData?'legacy-data-removed':'fresh-install'}));
     return fallbackAndSave();
   } catch { return initialData(); }
 }

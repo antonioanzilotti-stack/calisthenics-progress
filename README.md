@@ -10,12 +10,13 @@ PWA mobile-first in italiano per recupero della forma, forza, definizione, dimag
 - D — Lower Body 2
 - E — Conditioning opzionale
 
-Non esiste un calendario settimanale rigido: il suggerimento di forza segue A → B → C → D usando solo l’ultimo allenamento di forza realmente completato. E resta sempre opzionale e non interrompe la rotazione. Ogni giorno si può scegliere liberamente un programma o Riposo. La doppia progressione segnala quando tutte le serie di lavoro raggiungono il limite alto del range con RIR adeguato, ma il carico non viene mai modificato automaticamente.
+Non esiste un calendario settimanale rigido: il suggerimento di forza segue A → B → C → D usando solo l’ultimo allenamento di forza realmente completato. E resta sempre opzionale e non interrompe la rotazione. Le quattro schede di forza hanno quattro blocchi A1+A2, B1+B2, C1+C2 e D1+D2 con 15 secondi di transizione e recupero dopo il secondo esercizio. La doppia progressione viene proposta solo quando entrambi gli esercizi del blocco raggiungono il limite alto con RIR adeguato; il carico non viene mai modificato automaticamente.
 
 ## Funzioni principali
 
 - peso, ripetizioni, completamento, RIR e note per ogni serie;
-- timer di recupero 30/45/60/75/90/120 secondi, con avvio automatico opzionale;
+- pulsante Completa giro, indicatore del giro, ordine A1/A2 scambiabile e modalità separata per macchina occupata;
+- timer di recupero 30/45/60/75/90/120 secondi, con avvio automatico dopo il secondo esercizio della coppia;
 - sessioni avviabili, persistenti, pausabili, terminabili, saltate o spostate, anche più volte nello stesso giorno;
 - esercizi aggiungibili, sostituibili, riordinabili o rimovibili durante una sessione, senza perdere i dati già inseriti;
 - serie di riscaldamento e di lavoro aggiungibili o rimovibili;
@@ -45,7 +46,7 @@ npm run preview
 
 ## Migrazione e persistenza
 
-Il nuovo schema usa la chiave `calisthenics-progress-gym-v5`. Alla prima apertura migra automaticamente i dati palestra v3 e v4 compatibili, conservando sessioni, carichi, misure corporee e preferenze. Il vecchio programma D di conditioning viene archiviato nello storico come E, mentre il nuovo D è Lower Body 2. Le vecchie chiavi calisthenics precedenti al programma palestra non vengono reintrodotte.
+Il nuovo schema usa la chiave `calisthenics-progress-gym-v6`. Alla prima apertura migra automaticamente i dati palestra v3, v4 e v5 compatibili, conservando sessioni, carichi, misure corporee, esercizi personali, calendario e preferenze. Le vecchie sessioni restano leggibili anche quando non contengono blocchi di superserie.
 
 Le operazioni in Impostazioni sono distinte:
 
@@ -69,7 +70,7 @@ src/data/         esercizi e programmi A/B/C/D/E
 src/hooks/        stato condiviso e persistenza
 src/pages/        Oggi, Calendario, Progressi, Corpo, Esercizi, Impostazioni
 src/storage/      migrazione, localStorage, import/export
-src/types/        schema dati TypeScript v5
+src/types/        schema dati TypeScript v6
 src/utils/        fasi, pianificazione, aderenza e volume
 vite.config.ts    manifest e service worker PWA
 ```
